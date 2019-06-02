@@ -4,16 +4,17 @@
 FASTLED_USING_NAMESPACE
 
 #include <aws_connectivity.h>
+#include <animations/i_animation.h>
+#include <animation_factory.h>
+#include <render_utils.h>
+
 AwsConnectivity awsConnectivity;
 
-#define DATA_PIN    2
-//#define CLK_PIN   4
-#define LED_TYPE    WS2811
-#define COLOR_ORDER GRB
-#define NUM_LEDS    300
-CRGB leds[NUM_LEDS];
+HSV leds_hsv[NUM_LEDS];
+RenderUtils renderUtils(leds_hsv);
 
-uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+SemaphoreHandle_t animationsListMutex;
+IAnimation *curr_animation = NULL;
 
 TaskHandle_t Task1;
 
@@ -28,6 +29,25 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
+  if (strcmp("animations/clear", topic) == 0) {
+    // for(AnimationsList::iterator it = animationsList.begin(); it != animationsList.end(); ++it) {
+    //   IAnimation *animation = *it;
+    //   delete animation;
+    // }
+    // animationsList.clear();
+  } else if (strcmp("animations/set", topic) == 0){
+    unsigned long start_time = millis();
+    IAnimation *generated_animation = AnimationFactory::CreateAnimation((char *)payload);
+    Serial.print("took (ms): ");
+    Serial.println(millis() - start_time);
+    if(xSemaphoreTake(animationsListMutex, portMAX_DELAY) == pdTRUE) {
+      curr_animation = generated_animation;
+      xSemaphoreGive(animationsListMutex);
+    }
+
+    // animationsList.push_back(generated_animation);
+  }
+
 }
 
 void Task1code( void * parameter) {
@@ -39,13 +59,15 @@ void Task1code( void * parameter) {
 
 void setup() {
   Serial.begin(112500);
+  animationsListMutex = xSemaphoreCreateMutex();
 
-  FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  renderUtils.Setup();
+  AnimationFactory::InitObjectMap(leds_hsv);
 
   xTaskCreatePinnedToCore(
       Task1code, /* Function to implement the task */
       "Task1", /* Name of the task */
-      10000,  /* Stack size in words */
+      50000,  /* Stack size in words */
       NULL,  /* Task input parameter */
       0,  /* Priority of the task */
       &Task1,  /* Task handle. */
@@ -54,10 +76,15 @@ void setup() {
 }
 
 void loop() {
-  // Serial.println(millis());
-  // Serial.println(xPortGetCoreID());
-  fill_rainbow( leds, NUM_LEDS, gHue, 7);
-  FastLED.show();  
-  EVERY_N_MILLISECONDS( 20 ) { gHue+=5; } // slowly cycle the "base color" through the rainbow
+
+  if(xSemaphoreTake(animationsListMutex, portMAX_DELAY) == pdTRUE) {
+    IAnimation *animationCopy = curr_animation;
+    xSemaphoreGive(animationsListMutex);
+    if(animationCopy != NULL) {
+      animationCopy->Render(millis());
+    }
+  }
+
+  renderUtils.Show();
 }
 

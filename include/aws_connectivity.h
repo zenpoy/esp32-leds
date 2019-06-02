@@ -17,7 +17,7 @@ public:
 
     void setup(callback_signture callback) {
         connectToWifi();
-        NTPConnect();
+        //NTPConnect();
         initWifiSecure();
         connectToAws(callback);
     }
