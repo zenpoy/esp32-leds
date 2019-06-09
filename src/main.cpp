@@ -1,14 +1,17 @@
 #include <Arduino.h>
+#include <WiFi.h>
 #include "FastLED.h"
+#include <secrets.h>
+#include <PubSubClient.h>
 
 FASTLED_USING_NAMESPACE
 
-#include <aws_connectivity.h>
+//#include <aws_connectivity.h>
 #include <animations/i_animation.h>
 #include <animation_factory.h>
 #include <render_utils.h>
 
-AwsConnectivity awsConnectivity;
+//AwsConnectivity awsConnectivity;
 
 HSV leds_hsv[NUM_LEDS];
 RenderUtils renderUtils(leds_hsv);
@@ -50,10 +53,42 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 }
 
+void connectToWifi() {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    Serial.printf("Attempting to connect to SSID: ");
+    Serial.printf(ssid);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.print(".");
+        delay(1000);
+    }
+    Serial.println("ok!");
+}
+
+WiFiClient net;
+PubSubClient client(net);
+void connectToMessageBroker() {
+    client.setServer(mqttHost, 1883);
+    client.setCallback(callback);
+    if(client.connect(thingname)) {
+        Serial.println("connected to message broker");
+        client.subscribe("animations/#");
+    }
+    else {
+        Serial.print("error state:");
+        Serial.println(client.state());
+    }
+
+}
+
 void Task1code( void * parameter) {
-  awsConnectivity.setup(callback);
+  connectToWifi();
+  connectToMessageBroker();
+  //awsConnectivity.setup(callback);
   for(;;) {
-    awsConnectivity.loop();
+    client.loop();
+    //awsConnectivity.loop();
   }
 }
 
