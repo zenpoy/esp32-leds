@@ -3,6 +3,7 @@
 #include "FastLED.h"
 #include <secrets.h>
 #include <PubSubClient.h>
+#include "SPIFFS.h"
 
 FASTLED_USING_NAMESPACE
 
@@ -49,7 +50,26 @@ void callback(char* topic, byte* payload, unsigned int length) {
       curr_animation = generated_animation;
       xSemaphoreGive(animationsListMutex);
     }
-
+  } else if (strcmp("animations/song/seg0/write", topic) == 0){
+    File file = SPIFFS.open("/song/seg0.json", FILE_WRITE);
+    if (!file) {
+      Serial.println("There was an error opening the file for writing");
+      return;
+    }
+    file.close();
+  } else if (strcmp("animations/song/seg0/set", topic) == 0){
+    File file = SPIFFS.open("/song/seg0.json");
+    if(!file){
+        Serial.println("Failed to open file for reading");
+        return;
+    }
+    String line = file.readStringUntil('\n');
+    file.close();
+    IAnimation *generated_animation = AnimationFactory::CreateAnimation((char*) line.c_str());
+    if(xSemaphoreTake(animationsListMutex, portMAX_DELAY) == pdTRUE) {
+      curr_animation = generated_animation;
+      xSemaphoreGive(animationsListMutex);
+    }
     // animationsList.push_back(generated_animation);
   } else if(strcmp("current-song", topic) == 0) {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
@@ -99,7 +119,12 @@ void Task1code( void * parameter) {
 }
 
 void setup() {
-  Serial.begin(112500);
+  Serial.begin(115200);
+  if (!SPIFFS.begin(true)) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
+
   animationsListMutex = xSemaphoreCreateMutex();
 
   renderUtils.Setup();
@@ -125,7 +150,6 @@ void loop() {
       animationCopy->Render(millis());
     }
   }
-  
+
   renderUtils.Show();
 }
-
