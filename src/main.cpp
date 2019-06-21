@@ -10,11 +10,13 @@ FASTLED_USING_NAMESPACE
 #include <animations/i_animation.h>
 #include <animation_factory.h>
 #include <render_utils.h>
+#include <song_offset_tracker.h>
 
 //AwsConnectivity awsConnectivity;
 
 HSV leds_hsv[NUM_LEDS];
 RenderUtils renderUtils(leds_hsv);
+SongOffsetTracker songOffsetTracker;
 
 SemaphoreHandle_t animationsListMutex;
 IAnimation *curr_animation = NULL;
@@ -49,6 +51,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
 
     // animationsList.push_back(generated_animation);
+  } else if(strcmp("current-song", topic) == 0) {
+    songOffsetTracker.HandleCurrentSongMessage((char *)payload);
   }
 
 }
@@ -74,6 +78,7 @@ void connectToMessageBroker() {
     if(client.connect(thingname)) {
         Serial.println("connected to message broker");
         client.subscribe("animations/#");
+        client.subscribe("current-song");
     }
     else {
         Serial.print("error state:");
@@ -85,10 +90,11 @@ void connectToMessageBroker() {
 void Task1code( void * parameter) {
   connectToWifi();
   connectToMessageBroker();
-  //awsConnectivity.setup(callback);
+  IPAddress timeServerIP(10, 0, 0, 102);
+  songOffsetTracker.setup(timeServerIP, 123);
   for(;;) {
     client.loop();
-    //awsConnectivity.loop();
+    songOffsetTracker.loop();
   }
 }
 
@@ -119,7 +125,7 @@ void loop() {
       animationCopy->Render(millis());
     }
   }
-
+  
   renderUtils.Show();
 }
 
