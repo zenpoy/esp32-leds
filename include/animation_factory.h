@@ -10,7 +10,8 @@
 class AnimationFactory {
 
 public:
-  static IAnimation *CreateAnimation(const char *jsonStr);
+  static std::vector<IAnimation *> AnimationsListFromJson(const char *jsonStr);
+  static IAnimation *CreateAnimation(const JsonObject &animationAsJsonObj);
   static void InitObjectMap(HSV leds_hsv[]);
 
 private:

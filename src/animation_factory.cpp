@@ -46,15 +46,29 @@ void AnimationFactory::InitObjectMap(HSV leds_hsv[]) {
   object_map["a"] = GetPixelsFromStartToEnd(0, 45, leds_hsv);
 }
 
-IAnimation *AnimationFactory::CreateAnimation(const char *jsonStr) {
+std::vector<IAnimation *> AnimationFactory::AnimationsListFromJson(const char *jsonStr) {
   IAnimation *generated_animation = NULL;
   DynamicJsonDocument doc(1024);
   deserializeJson(doc, jsonStr);
+  JsonArray array = doc.as<JsonArray>();
 
-  const char * animation_name = doc["animation_name"];
-  int timeout = doc["timeout"];
-  const char *pixels_name = doc["pixels_name"];
-  JsonObject animation_params = doc["animation_params"];
+  std::vector<IAnimation *> animationsVector(array.size());
+  for(int i=0; i<array.size(); i++) {
+    IAnimation *animationObj = CreateAnimation(array.getElement(i).as<JsonObject>()); 
+    animationsVector.push_back(animationObj);
+  }
+
+  return animationsVector;
+}
+
+IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj) {
+  
+  IAnimation *generated_animation = NULL;
+
+  const char * animation_name = animationAsJsonObj["animation_name"];
+  int timeout = animationAsJsonObj["timeout"];
+  const char *pixels_name = animationAsJsonObj["pixels_name"];
+  JsonObject animation_params = animationAsJsonObj["animation_params"];
 
   if (strcmp(animation_name, "const_color") == 0) {
     generated_animation = new ConstColorAnimation();
