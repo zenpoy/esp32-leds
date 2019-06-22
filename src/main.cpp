@@ -1,20 +1,18 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include "FastLED.h"
 #include <secrets.h>
 #include <PubSubClient.h>
 #include "SPIFFS.h"
-
-FASTLED_USING_NAMESPACE
 
 #include <animations/i_animation.h>
 #include <animation_factory.h>
 #include <render_utils.h>
 #include <song_offset_tracker.h>
 #include <animations_container.h>
+#include <num_leds.h>
 
 HSV leds_hsv[NUM_LEDS];
-RenderUtils renderUtils(leds_hsv);
+RenderUtils renderUtils(leds_hsv, NUM_LEDS);
 SongOffsetTracker songOffsetTracker;
 AnimationsContainer animationsContainer;
 
@@ -122,6 +120,8 @@ void setup() {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
+
+  disableCore0WDT();
 
   animationsListMutex = xSemaphoreCreateMutex();
 

@@ -1,19 +1,21 @@
 #ifndef __RENDER_UTILS_H__
 #define __RENDER_UTILS_H__
 
-#include <num_leds.h>
 #include <hsv.h>
 
-#include <FastLED.h>
+#include <NeoPixelBus.h>
 
 #define DATA_PIN    2
-#define LED_TYPE    WS2811
-#define COLOR_ORDER GRB
+#define COLOR_ORDER NeoGrbFeature
 
 class RenderUtils {
 
 public:
-    RenderUtils(HSV leds_hsv[NUM_LEDS]) : m_leds_hsv(leds_hsv) {}
+    RenderUtils(HSV leds_hsv[], int numberOfLeds) : 
+        m_numberOfLeds(numberOfLeds),
+        m_leds_hsv(leds_hsv), 
+        m_leds_rgb(numberOfLeds, DATA_PIN) 
+    {}
 
 public:
     void Setup();
@@ -21,9 +23,9 @@ public:
     void Clear();
 
 private:
+    int m_numberOfLeds = 0;
     HSV *m_leds_hsv;
-    CRGB m_leds_rgb[NUM_LEDS];
-
+    NeoPixelBus<COLOR_ORDER, Neo800KbpsMethod> m_leds_rgb;
 };
 
 #endif // __RENDER_UTILS_H__
