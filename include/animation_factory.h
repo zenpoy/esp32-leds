@@ -10,7 +10,7 @@
 class AnimationFactory {
 
 public:
-  static IAnimation *CreateAnimation(char *data);
+  static IAnimation *CreateAnimation(const char *jsonStr);
   static void InitObjectMap(HSV leds_hsv[]);
 
 private:

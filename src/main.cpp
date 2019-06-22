@@ -11,12 +11,14 @@ FASTLED_USING_NAMESPACE
 #include <animation_factory.h>
 #include <render_utils.h>
 #include <song_offset_tracker.h>
+#include <animations_container.h>
 
 //AwsConnectivity awsConnectivity;
 
 HSV leds_hsv[NUM_LEDS];
 RenderUtils renderUtils(leds_hsv);
 SongOffsetTracker songOffsetTracker;
+AnimationsContainer animationsContainer;
 
 SemaphoreHandle_t animationsListMutex;
 IAnimation *curr_animation = NULL;
@@ -91,10 +93,10 @@ void Task1code( void * parameter) {
   connectToWifi();
   connectToMessageBroker();
   IPAddress timeServerIP(10, 0, 0, 102);
-  songOffsetTracker.setup(timeServerIP, 123);
+  //songOffsetTracker.setup(timeServerIP, 123);
   for(;;) {
     client.loop();
-    songOffsetTracker.loop();
+    //songOffsetTracker.loop();
   }
 }
 
@@ -104,6 +106,9 @@ void setup() {
 
   renderUtils.Setup();
   AnimationFactory::InitObjectMap(leds_hsv);
+
+  const char *jsonStr = "{\"animation_name\":\"rainbow\",\"pixels_name\":\"a\",\"timeout\":5000,\"animation_params\":{\"start_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":0.0,\"max_value\":1.0,\"phase\":0.0,\"repeats\":1.0}},\"end_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":1.0,\"max_value\":2.0,\"phase\":0.0,\"repeats\":1.0}}}}";
+  animationsContainer.SetFromJson(jsonStr);
 
   xTaskCreatePinnedToCore(
       Task1code, /* Function to implement the task */
@@ -118,13 +123,27 @@ void setup() {
 
 void loop() {
 
-  if(xSemaphoreTake(animationsListMutex, portMAX_DELAY) == pdTRUE) {
-    IAnimation *animationCopy = curr_animation;
-    xSemaphoreGive(animationsListMutex);
-    if(animationCopy != NULL) {
-      animationCopy->Render(millis());
-    }
-  }
+  renderUtils.Clear();
+
+  unsigned long currentMillis = millis();
+  //int32_t songOffset = songOffsetTracker.GetOffsetMs(currentMillis);
+  //if(songOffset >= 0) {
+    // AnimationsContainer::ConstAnimationsVector &currList = animationsContainer.GetAnimationsList(songOffset);
+    // for(AnimationsContainer::ConstAnimationsVector::const_iterator it = currList.begin(); it != currList.end(); it++) {
+    //   IAnimation *animation = *it;
+    //   if(animation != nullptr) {
+    //     animation->Render((unsigned long)songOffset);
+    //   }
+    // }
+  //}
+
+  // // if(xSemaphoreTake(animationsListMutex, portMAX_DELAY) == pdTRUE) {
+  // //   IAnimation *animationCopy = curr_animation;
+  // //   xSemaphoreGive(animationsListMutex);
+  // //   if(animationCopy != NULL) {
+  // //     animationCopy->Render(millis());
+  // //   }
+  // // }
   
   renderUtils.Show();
 }

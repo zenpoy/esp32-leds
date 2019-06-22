@@ -29,7 +29,7 @@ int32_t SongOffsetTracker::GetOffsetMs(unsigned long currentEspMillis) {
         return -1;
 
     if(!isSongPlaying)
-        return -1;
+        return -2;
 
     // when esp's millis() function returned this time (songStartTime), the song started
     uint32_t songStartTime = (uint32_t)(songStartTimeEpoch - timesync.m_espStartTimeMs);

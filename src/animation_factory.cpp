@@ -46,10 +46,10 @@ void AnimationFactory::InitObjectMap(HSV leds_hsv[]) {
   object_map["a"] = GetPixelsFromStartToEnd(0, 45, leds_hsv);
 }
 
-IAnimation *AnimationFactory::CreateAnimation(char *data) {
+IAnimation *AnimationFactory::CreateAnimation(const char *jsonStr) {
   IAnimation *generated_animation = NULL;
   DynamicJsonDocument doc(1024);
-  deserializeJson(doc, data);
+  deserializeJson(doc, jsonStr);
 
   const char * animation_name = doc["animation_name"];
   int timeout = doc["timeout"];
