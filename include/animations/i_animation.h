@@ -19,28 +19,22 @@ protected:
 public:
 
   void Render(unsigned long curr_time) {
-    float rel_time = should_end ? ((float)(curr_time - start_time) / (float)(end_time - start_time)) : 0;
+    float rel_time = ((float)(curr_time - start_time) / (float)(end_time - start_time));
     Render(rel_time);
   }
 
-  void InitAnimation(const std::vector<HSV *> &pixels, int timeout) {
+  void InitAnimation(const std::vector<HSV *> &pixels, unsigned int startTime, unsigned int endTime) {
     this->pixels = pixels;
-    if (timeout == 0) {
-      this->should_end = false;
-    } else {
-      this->should_end = true;
-    }
-    this->start_time = millis();
-    this->end_time = this->start_time + timeout;
+    this->start_time = startTime;
+    this->end_time = endTime;
   }
 
-  bool IsFinished(unsigned long current_time) {
-    return should_end && this->end_time <= current_time;
+  bool IsActive(unsigned long curr_time) {
+    return curr_time >= this->start_time && curr_time < this->end_time;
   }
 
 protected:
   unsigned long start_time, end_time;
-  bool should_end;
   std::vector<HSV *> pixels;
 };
 

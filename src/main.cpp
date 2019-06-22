@@ -128,7 +128,7 @@ void setup() {
   renderUtils.Setup();
   AnimationFactory::InitObjectMap(leds_hsv);
 
-  const char *jsonStr = "[{\"animation_name\":\"rainbow\",\"pixels_name\":\"a\",\"timeout\":5000,\"animation_params\":{\"start_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":0.0,\"max_value\":1.0,\"phase\":0.0,\"repeats\":1.0}},\"end_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":1.0,\"max_value\":2.0,\"phase\":0.0,\"repeats\":1.0}}}}]";
+  const char *jsonStr = "[{\"animation_name\":\"rainbow\",\"pixels_name\":\"a\",\"start_time\":5000,\"end_time\":10000,\"animation_params\":{\"start_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":0.0,\"max_value\":1.0,\"phase\":0.0,\"repeats\":1.0}},\"end_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":1.0,\"max_value\":2.0,\"phase\":0.0,\"repeats\":1.0}}}}]";
   animationsContainer.SetFromJson(jsonStr);
 
   xTaskCreatePinnedToCore(
@@ -152,7 +152,7 @@ void loop() {
     AnimationsContainer::ConstAnimationsVector &currList = animationsContainer.GetAnimationsList(songOffset);
     for(AnimationsContainer::ConstAnimationsVector::const_iterator it = currList.begin(); it != currList.end(); it++) {
       IAnimation *animation = *it;
-      if(animation != nullptr) {
+      if(animation != nullptr && animation->IsActive(songOffset)) {
         animation->Render((unsigned long)songOffset);
       }
     }

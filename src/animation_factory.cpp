@@ -66,7 +66,8 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
   IAnimation *generated_animation = NULL;
 
   const char * animation_name = animationAsJsonObj["animation_name"];
-  int timeout = animationAsJsonObj["timeout"];
+  int startTime = animationAsJsonObj["start_time"];
+  int endTime = animationAsJsonObj["end_time"];
   const char *pixels_name = animationAsJsonObj["pixels_name"];
   JsonObject animation_params = animationAsJsonObj["animation_params"];
 
@@ -81,7 +82,7 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
   }
 
   if (generated_animation != NULL) {
-    generated_animation->InitAnimation(object_map[pixels_name], timeout);
+    generated_animation->InitAnimation(object_map[pixels_name], startTime, endTime);
     generated_animation->InitFromJson(animation_params);
   }
 
