@@ -23,14 +23,18 @@ void SongOffsetTracker::HandleCurrentSongMessage(char *data) {
 }
 
 int32_t SongOffsetTracker::GetOffsetMs(unsigned long currentEspMillis) {
-
-    if(!timesync.m_isTimeValid)
-        return -1;
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
     if(!isSongPlaying)
         return -2;
 
+    portENTER_CRITICAL(&mux);
+    if(!timesync.m_isTimeValid) {
+        portEXIT_CRITICAL(&mux);
+        return -1;
+    }
     // when esp's millis() function returned this time (songStartTime), the song started
     uint32_t songStartTime = (uint32_t)(songStartTimeEpoch - timesync.m_espStartTimeMs);
+    portEXIT_CRITICAL(&mux);
     return currentEspMillis - songStartTime;
 }
