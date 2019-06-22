@@ -2,19 +2,19 @@
 #include <WiFi.h>
 #include <secrets.h>
 #include <PubSubClient.h>
-#include "SPIFFS.h"
 
 #include <animations/i_animation.h>
-#include <animation_factory.h>
 #include <render_utils.h>
 #include <song_offset_tracker.h>
 #include <animations_container.h>
+#include <fs_manager.h>
 #include <num_leds.h>
 
 HSV leds_hsv[NUM_LEDS];
 RenderUtils renderUtils(leds_hsv, NUM_LEDS);
 SongOffsetTracker songOffsetTracker;
 AnimationsContainer animationsContainer;
+FsManager fsManager;
 
 SemaphoreHandle_t animationsListMutex;
 IAnimation *curr_animation = NULL;
@@ -47,26 +47,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     //   curr_animation = generated_animation;
     //   xSemaphoreGive(animationsListMutex);
     // }
-  } else if (strcmp("animations/song/seg0/write", topic) == 0){
-    File file = SPIFFS.open("/song/seg0.json", FILE_WRITE);
-    if (!file) {
-      Serial.println("There was an error opening the file for writing");
-      return;
-    }
-    file.close();
-  } else if (strcmp("animations/song/seg0/set", topic) == 0){
-    File file = SPIFFS.open("/song/seg0.json");
-    if(!file){
-        Serial.println("Failed to open file for reading");
-        return;
-    }
-    String line = file.readStringUntil('\n');
-    file.close();
-    // IAnimation *generated_animation = AnimationFactory::CreateAnimation((char*) line.c_str());
-    // if(xSemaphoreTake(animationsListMutex, portMAX_DELAY) == pdTRUE) {
-    //   curr_animation = generated_animation;
-    //   xSemaphoreGive(animationsListMutex);
-    // }
+  } else if (strcmp("animations/song/seg0/write", topic) == 0) {
+    fsManager.SaveToFs(payload, length);
   } else if(strcmp("current-song", topic) == 0) {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
   }
@@ -93,8 +75,8 @@ void connectToMessageBroker() {
     client.setCallback(callback);
     if(client.connect(thingname)) {
         Serial.println("connected to message broker");
-        client.subscribe("animations/#");
-        client.subscribe("current-song");
+        client.subscribe("animations/#", 2);
+        client.subscribe("current-song", 1);
     }
     else {
         Serial.print("error state:");
@@ -116,20 +98,19 @@ void Task1code( void * parameter) {
 
 void setup() {
   Serial.begin(115200);
-  if (!SPIFFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  }
 
+  fsManager.setup();
   disableCore0WDT();
 
   animationsListMutex = xSemaphoreCreateMutex();
 
+  animationsContainer.setup(leds_hsv);
   renderUtils.Setup();
-  AnimationFactory::InitObjectMap(leds_hsv);
 
-  const char *jsonStr = "[{\"animation_name\":\"rainbow\",\"pixels_name\":\"a\",\"start_time\":5000,\"end_time\":10000,\"animation_params\":{\"start_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":0.0,\"max_value\":1.0,\"phase\":0.0,\"repeats\":1.0}},\"end_hue\":{\"type\":\"sin\",\"params\":{\"min_value\":1.0,\"max_value\":2.0,\"phase\":0.0,\"repeats\":1.0}}}}]";
-  animationsContainer.SetFromJson(jsonStr);
+  char buf[1024];
+  memset(buf, 0, 1024);
+  fsManager.ReadFromFs((uint8_t *)buf, 1024);
+  animationsContainer.SetFromJson(buf);
 
   xTaskCreatePinnedToCore(
       Task1code, /* Function to implement the task */

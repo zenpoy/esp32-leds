@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include <hsv.h>
 #include <animations/i_animation.h>
 
 #ifndef MAX_ANIMATIONS_IN_SEGMENT
@@ -17,6 +18,8 @@ public:
     AnimationsContainer() :
         currentAnimations(MAX_ANIMATIONS_IN_SEGMENT)
     {}
+
+    void setup(HSV leds_hsv[]);
 
 public:
     typedef const std::vector<IAnimation *> ConstAnimationsVector;
