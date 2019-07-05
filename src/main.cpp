@@ -23,8 +23,9 @@ TaskHandle_t Task1;
 
 void callback(char* topic, byte* payload, unsigned int length) {
 
-  Serial.print(xPortGetCoreID());
-  Serial.print("  Message arrived [");
+  Serial.print("Message arrived, ");
+  Serial.print(length);
+  Serial.print(" [");
   Serial.print(topic);
   Serial.print("] ");
   for (int i = 0; i < length; i++) {
@@ -47,8 +48,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
     //   curr_animation = generated_animation;
     //   xSemaphoreGive(animationsListMutex);
     // }
-  } else if (strcmp("animations/song/seg0/write", topic) == 0) {
+  } else if (strcmp("animations/alterego", topic) == 0) {
     fsManager.SaveToFs(payload, length);
+    animationsContainer.SetFromJson("alterego", (const char *)payload);
   } else if(strcmp("current-song", topic) == 0) {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
   }
@@ -75,7 +77,7 @@ void connectToMessageBroker() {
     client.setCallback(callback);
     if(client.connect(thingname)) {
         Serial.println("connected to message broker");
-        client.subscribe("animations/#", 2);
+        client.subscribe("animations/#", 1);
         client.subscribe("current-song", 1);
     }
     else {
@@ -107,10 +109,12 @@ void setup() {
   animationsContainer.setup(leds_hsv);
   renderUtils.Setup();
 
-  char buf[1024];
-  memset(buf, 0, 1024);
-  fsManager.ReadFromFs((uint8_t *)buf, 1024);
-  animationsContainer.SetFromJson(buf);
+  char buf[2048];
+  memset(buf, 0, 2048);
+  int bytesRead = fsManager.ReadFromFs((uint8_t *)buf, 2048);
+  if(bytesRead > 0) {
+    animationsContainer.SetFromJson("alterego", buf);
+  }
 
   xTaskCreatePinnedToCore(
       Task1code, /* Function to implement the task */
@@ -130,8 +134,8 @@ void loop() {
   unsigned long currentMillis = millis();
   int32_t songOffset = songOffsetTracker.GetOffsetMs(currentMillis);
   if(songOffset >= 0) {
-    AnimationsContainer::ConstAnimationsVector &currList = animationsContainer.GetAnimationsList(songOffset);
-    for(AnimationsContainer::ConstAnimationsVector::const_iterator it = currList.begin(); it != currList.end(); it++) {
+    const AnimationsContainer::AnimationsList *currList = animationsContainer.GetAnimationsList("alterego", songOffset);
+    for(AnimationsContainer::AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++) {
       IAnimation *animation = *it;
       if(animation != nullptr && animation->IsActive(songOffset)) {
         animation->Render((unsigned long)songOffset);

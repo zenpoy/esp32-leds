@@ -8,7 +8,7 @@
 
 class IAnimation {
 
-public: ~IAnimation() {}
+public: virtual ~IAnimation() { }
 
 public:
   virtual void InitFromJson(const JsonObject &animation_params) = 0;

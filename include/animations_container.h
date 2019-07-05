@@ -1,35 +1,40 @@
 #ifndef __ANIMATIONS_CONTAINER_H__
 #define __ANIMATIONS_CONTAINER_H__
 
-#include <vector>
+#include <list>
+#include <map>
 
 #include <hsv.h>
 #include <animations/i_animation.h>
-
-#ifndef MAX_ANIMATIONS_IN_SEGMENT
-#define MAX_ANIMATIONS_IN_SEGMENT 100
-#endif
-
 
 class AnimationsContainer 
 {
 
 public:
-    AnimationsContainer() :
-        currentAnimations(MAX_ANIMATIONS_IN_SEGMENT)
-    {}
+    AnimationsContainer();
 
+public:
     void setup(HSV leds_hsv[]);
 
 public:
-    typedef const std::vector<IAnimation *> ConstAnimationsVector;
+    typedef std::list<IAnimation *> AnimationsList;
 
 public:
-    ConstAnimationsVector &GetAnimationsList(unsigned int currentSongOffsetMs);
-    void SetFromJson(const char *jsonStr);
+    const AnimationsList *GetAnimationsList(const std::string &songName, unsigned int currentSongOffsetMs);
+    void SetFromJson(const std::string &songName, const char *jsonStr);
 
 private:
-    std::vector<IAnimation *> currentAnimations;
+    void ClearUnusedAnimations();
+
+private:
+    std::map<std::string, AnimationsList *> availibleAnimations;
+    const AnimationsList *emptyAnimationsList;
+
+    // we cannot delete lists from the map from core 0 since core 1 might still be using them.
+    // so we put it in this list, and erase from it when it's safe
+    std::list<AnimationsList *> animationsForDelete;
+
+    SemaphoreHandle_t mapMutex;
 };
 
 

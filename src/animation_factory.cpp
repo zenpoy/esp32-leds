@@ -46,19 +46,18 @@ void AnimationFactory::InitObjectMap(HSV leds_hsv[]) {
   object_map["a"] = GetPixelsFromStartToEnd(0, 45, leds_hsv);
 }
 
-std::vector<IAnimation *> AnimationFactory::AnimationsListFromJson(const char *jsonStr) {
-  IAnimation *generated_animation = NULL;
-  DynamicJsonDocument doc(1024);
+std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(const char *jsonStr) {
+  DynamicJsonDocument doc(2048);
   deserializeJson(doc, jsonStr);
   JsonArray array = doc.as<JsonArray>();
 
-  std::vector<IAnimation *> animationsVector(array.size());
+  std::list<IAnimation *> *animationsList = new std::list<IAnimation *>();
   for(int i=0; i<array.size(); i++) {
     IAnimation *animationObj = CreateAnimation(array.getElement(i).as<JsonObject>()); 
-    animationsVector.push_back(animationObj);
+    animationsList->push_back(animationObj);
   }
 
-  return animationsVector;
+  return animationsList;
 }
 
 IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj) {

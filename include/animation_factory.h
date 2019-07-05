@@ -4,13 +4,13 @@
 #include <animations/i_animation.h>
 #include <hsv.h>
 
-#include <vector>
+#include <list>
 #include <map>
 
 class AnimationFactory {
 
 public:
-  static std::vector<IAnimation *> AnimationsListFromJson(const char *jsonStr);
+  static std::list<IAnimation *> *AnimationsListFromJson(const char *jsonStr);
   static IAnimation *CreateAnimation(const JsonObject &animationAsJsonObj);
   static void InitObjectMap(HSV leds_hsv[]);
 
