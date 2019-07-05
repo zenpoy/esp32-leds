@@ -1,6 +1,7 @@
 #include <animation_factory.h>
 
 #include <animations/const_color.h>
+#include <animations/set_brightness.h>
 #include <animations/fade_out.h>
 #include <animations/fade_in.h>
 #include <animations/rainbow.h>
@@ -72,6 +73,8 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
 
   if (strcmp(animation_name, "const_color") == 0) {
     generated_animation = new ConstColorAnimation();
+  } else if(strcmp(animation_name, "set_brightness") == 0) {
+    generated_animation = new SetBrightnessAnimation();
   } else if(strcmp(animation_name, "fade_out") == 0) {
     generated_animation = new FadeOutAnimation();
   } else if(strcmp(animation_name, "fade_in") == 0) {
