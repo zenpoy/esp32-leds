@@ -7,6 +7,7 @@
 #include <animations/fade_in.h>
 #include <animations/rainbow.h>
 #include <animations/random_hue.h>
+#include <animations/alternate.h>
 
 #include <ArduinoJson.h>
 #include <Arduino.h>
@@ -87,6 +88,8 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new RainbowAnimation();
   } else if(strcmp(animation_name, "random_hue") == 0) {
     generated_animation = new RandomHueAnimation();
+  } else if(strcmp(animation_name, "alternate") == 0) {
+    generated_animation = new AlternateAnimation();
   }
 
   if (generated_animation != NULL) {
