@@ -5,6 +5,7 @@
 #include <float_func/sin_float_func.h>
 #include <float_func/segment_float_func.h>
 #include <float_func/steps.h>
+#include <float_func/repeate_float_func.h>
 
 IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
 
@@ -24,6 +25,8 @@ IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
         func = new SegmentFloatFunc();
     } else if(strcmp(func_type, "steps") == 0) {
         func = new StepsFloatFunc();
+    } else if(strcmp(func_type, "repeate") == 0) {
+        func = new RepeateFloatFunc();
     }
 
     if(func != NULL) {
