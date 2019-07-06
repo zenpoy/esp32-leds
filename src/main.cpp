@@ -142,5 +142,6 @@ void loop() {
       }
     }
   }
+  unsigned long renderLoopTime = millis() - currentMillis;
   renderUtils.Show();
 }

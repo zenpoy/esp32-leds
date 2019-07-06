@@ -1,12 +1,17 @@
 #include <animations/set_brightness.h>
 
+SetBrightnessAnimation::~SetBrightnessAnimation()
+{
+    delete brightness;
+    brightness = NULL;
+}
+
 void SetBrightnessAnimation::InitFromJson(const JsonObject &animation_params) {
   brightness = FloatAnimationFactory(animation_params["brightness"]);
 }
 
 void SetBrightnessAnimation::Render(float rel_time) {
 
-    Serial.println(rel_time);
     if(brightness == NULL)
         return;
 

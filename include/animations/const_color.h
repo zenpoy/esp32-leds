@@ -7,6 +7,9 @@
 class ConstColorAnimation : public IAnimation {
 
 public:
+  ~ConstColorAnimation();
+
+public:
   void InitFromJson(const JsonObject &animation_params);
   void Render(float rel_time);
 

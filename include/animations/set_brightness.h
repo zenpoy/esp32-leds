@@ -7,6 +7,9 @@
 class SetBrightnessAnimation : public IAnimation {
 
 public:
+    ~SetBrightnessAnimation();
+
+public:
   void InitFromJson(const JsonObject &animation_params);
   void Render(float rel_time);
 

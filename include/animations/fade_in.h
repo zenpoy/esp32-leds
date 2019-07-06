@@ -7,6 +7,9 @@
 class FadeInAnimation : public IAnimation {
 
 public:
+  ~FadeInAnimation();
+
+public:
   void InitFromJson(const JsonObject &animation_params);
   void Render(float rel_time);
 

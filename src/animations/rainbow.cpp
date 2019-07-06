@@ -1,9 +1,11 @@
 #include <animations/rainbow.h>
 
 RainbowAnimation::~RainbowAnimation() {
+
     delete start_hue;
-    delete end_hue;
     start_hue = NULL;
+    
+    delete end_hue;
     end_hue = NULL;
 }
 

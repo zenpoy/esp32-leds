@@ -2,6 +2,7 @@
 
 #include <animations/const_color.h>
 #include <animations/set_brightness.h>
+#include <animations/hue_shift.h>
 #include <animations/fade_out.h>
 #include <animations/fade_in.h>
 #include <animations/rainbow.h>
@@ -44,7 +45,7 @@ void AnimationFactory::InitObjectMap(HSV leds_hsv[]) {
   object_map["lb"] = GetPixelsFromStartToEnd(25, 32, leds_hsv);
   object_map["lm"] = GetPixelsFromStartToEnd(32, 35, leds_hsv);
   object_map["lt"] = GetPixelsFromStartToEnd(35, 45, leds_hsv);
-  object_map["a"] = GetPixelsFromStartToEnd(0, 45, leds_hsv);
+  object_map["a"] = GetPixelsFromStartToEnd(0, 300, leds_hsv);
 }
 
 std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(const char *jsonStr) {
@@ -75,6 +76,8 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new ConstColorAnimation();
   } else if(strcmp(animation_name, "set_brightness") == 0) {
     generated_animation = new SetBrightnessAnimation();
+  } else if(strcmp(animation_name, "hue_shift") == 0) {
+    generated_animation = new HueShiftAnimation();
   } else if(strcmp(animation_name, "fade_out") == 0) {
     generated_animation = new FadeOutAnimation();
   } else if(strcmp(animation_name, "fade_in") == 0) {
