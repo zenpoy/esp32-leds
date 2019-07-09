@@ -7,8 +7,8 @@ AnimationsContainer::AnimationsContainer() {
   mapMutex = xSemaphoreCreateMutex();
 }
 
-void AnimationsContainer::setup(HSV leds_hsv[]) {
-  AnimationFactory::InitObjectMap(leds_hsv);
+void AnimationsContainer::setup() {
+
 }
 
 void AnimationsContainer::SetFromJson(const std::string &songName, const char *jsonStr) {

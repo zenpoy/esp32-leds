@@ -12,7 +12,7 @@ class AnimationFactory {
 public:
   static std::list<IAnimation *> *AnimationsListFromJson(const char *jsonStr);
   static IAnimation *CreateAnimation(const JsonObject &animationAsJsonObj);
-  static void InitObjectMap(HSV leds_hsv[]);
+  static void InitObjectMap(HSV leds_arr[], const JsonObject &objectsMap);
 
 private:
   typedef std::map<std::string, std::vector<HSV *> > LedObjectMap;

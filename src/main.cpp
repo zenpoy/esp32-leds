@@ -9,15 +9,13 @@
 #include <animations_container.h>
 #include <fs_manager.h>
 #include <num_leds.h>
+#include <animation_factory.h>
 
 HSV leds_hsv[NUM_LEDS];
 RenderUtils renderUtils(leds_hsv, NUM_LEDS);
 SongOffsetTracker songOffsetTracker;
 AnimationsContainer animationsContainer;
 FsManager fsManager;
-
-SemaphoreHandle_t animationsListMutex;
-IAnimation *curr_animation = NULL;
 
 TaskHandle_t Task1;
 
@@ -33,26 +31,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
-  if (strcmp("animations/clear", topic) == 0) {
-    // for(AnimationsList::iterator it = animationsList.begin(); it != animationsList.end(); ++it) {
-    //   IAnimation *animation = *it;
-    //   delete animation;
-    // }
-    // animationsList.clear();
-  } else if (strcmp("animations/set", topic) == 0){
-    // unsigned long start_time = millis();
-    // IAnimation *generated_animation = AnimationFactory::CreateAnimation((char *)payload);
-    // Serial.print("took (ms): ");
-    // Serial.println(millis() - start_time);
-    // if(xSemaphoreTake(animationsListMutex, portMAX_DELAY) == pdTRUE) {
-    //   curr_animation = generated_animation;
-    //   xSemaphoreGive(animationsListMutex);
-    // }
-  } else if (strcmp("animations/alterego", topic) == 0) {
-    fsManager.SaveToFs(payload, length);
+  if (strcmp("animations/alterego", topic) == 0) {
+    fsManager.SaveToFs("/music/alterego", payload, length);
     animationsContainer.SetFromJson("alterego", (const char *)payload);
   } else if(strcmp("current-song", topic) == 0) {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
+  } else if(strcmp("objects-config", topic) == 0) {
+    fsManager.SaveToFs("/objects-config", payload, length);
   }
 
 }
@@ -79,12 +64,24 @@ void connectToMessageBroker() {
         Serial.println("connected to message broker");
         client.subscribe("animations/#", 1);
         client.subscribe("current-song", 1);
+        client.subscribe("objects-config", 1);
     }
     else {
         Serial.print("error state:");
         Serial.println(client.state());
     }
 
+}
+
+void HandleObjectsConfig(const char *jsonBuf) {
+
+  DynamicJsonDocument doc(1024);
+  deserializeJson(doc, jsonBuf);
+
+  int totalPixels = doc["total_pixels"];
+  Serial.println(totalPixels);
+
+  AnimationFactory::InitObjectMap(leds_hsv, doc["objects"]);
 }
 
 void Task1code( void * parameter) {
@@ -100,18 +97,23 @@ void Task1code( void * parameter) {
 
 void setup() {
   Serial.begin(115200);
-
-  fsManager.setup();
   disableCore0WDT();
 
-  animationsListMutex = xSemaphoreCreateMutex();
-
-  animationsContainer.setup(leds_hsv);
+  fsManager.setup();
+  animationsContainer.setup();
   renderUtils.Setup();
 
   char buf[2048];
+  int bytesRead;
+
   memset(buf, 0, 2048);
-  int bytesRead = fsManager.ReadFromFs((uint8_t *)buf, 2048);
+  bytesRead = fsManager.ReadFromFs("/objects-config", (uint8_t *)buf, 2048);
+  if(bytesRead > 0) {
+    HandleObjectsConfig(buf);
+  }
+
+  memset(buf, 0, 2048);
+  bytesRead = fsManager.ReadFromFs("/music/alterego", (uint8_t *)buf, 2048);
   if(bytesRead > 0) {
     animationsContainer.SetFromJson("alterego", buf);
   }

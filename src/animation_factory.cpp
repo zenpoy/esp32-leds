@@ -36,19 +36,20 @@ std::vector<HSV *> GetPixelsFromIndices(const std::vector<int> &indices, HSV led
   return pixelsVec;
 }
 
-void AnimationFactory::InitObjectMap(HSV leds_hsv[]) {
-  object_map["one"] = GetPixelsFromStartToEnd(0, 44, leds_hsv);
-  object_map["two"] = GetPixelsFromStartToEnd(55, 110, leds_hsv);
-  object_map["three"] = GetPixelsFromStartToEnd(118, 196, leds_hsv);
-  object_map["four"] = GetPixelsFromStartToEnd(222, 300, leds_hsv);
-  object_map["t"] = GetPixelsFromStartToEnd(0, 4, leds_hsv);
-  object_map["rt"] = GetPixelsFromStartToEnd(4, 11, leds_hsv);
-  object_map["rm"] = GetPixelsFromStartToEnd(11, 14, leds_hsv);
-  object_map["rb"] = GetPixelsFromStartToEnd(14, 25, leds_hsv);
-  object_map["lb"] = GetPixelsFromStartToEnd(25, 32, leds_hsv);
-  object_map["lm"] = GetPixelsFromStartToEnd(32, 35, leds_hsv);
-  object_map["lt"] = GetPixelsFromStartToEnd(35, 45, leds_hsv);
-  object_map["a"] = GetPixelsFromStartToEnd(0, 50, leds_hsv);
+void AnimationFactory::InitObjectMap(HSV leds_hsv[], const JsonObject &objectsMap) {
+
+  for (JsonPair p : objectsMap) {
+      const char* key = p.key().c_str();
+      JsonArray indices = p.value().as<JsonArray>();
+
+      object_map[key].reserve(indices.size());
+      for(JsonVariant index : indices) {
+        int pixelIndex = index.as<int>();
+        HSV *pixelPtr = &(leds_hsv[pixelIndex]);
+        object_map[key].push_back(pixelPtr);
+      }
+  }
+
 }
 
 std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(const char *jsonStr) {

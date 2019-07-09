@@ -10,8 +10,8 @@ public:
     bool setup();
 
 public:
-    bool SaveToFs(const uint8_t *payload, unsigned int length);
-    unsigned int ReadFromFs(uint8_t *buffer, unsigned int length);
+    bool SaveToFs(const char *path, const uint8_t *payload, unsigned int length);
+    unsigned int ReadFromFs(const char *path, uint8_t *buffer, unsigned int length);
 };
 
 #endif // __FS_MANAGER_H__

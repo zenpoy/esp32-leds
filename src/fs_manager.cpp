@@ -11,9 +11,9 @@ bool FsManager::setup() {
   return true;
 }
 
-bool FsManager::SaveToFs(const uint8_t *payload, unsigned int length) {
+bool FsManager::SaveToFs(const char *path, const uint8_t *payload, unsigned int length) {
     Serial.println("writing file to FS");
-    File file = SPIFFS.open("/music/alterego", FILE_WRITE);
+    File file = SPIFFS.open(path, FILE_WRITE);
     if (!file) {
       Serial.println("There was an error opening the file for writing");
       return false;
@@ -28,8 +28,8 @@ bool FsManager::SaveToFs(const uint8_t *payload, unsigned int length) {
     return true;
 }
 
-unsigned int FsManager::ReadFromFs(uint8_t *buffer, unsigned int length) {
-    File file = SPIFFS.open("/music/alterego");
+unsigned int FsManager::ReadFromFs(const char *path, uint8_t *buffer, unsigned int length) {
+    File file = SPIFFS.open(path);
     if(!file){
         Serial.println("Failed to open file for reading");
         return 0;

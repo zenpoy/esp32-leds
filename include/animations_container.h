@@ -14,7 +14,7 @@ public:
     AnimationsContainer();
 
 public:
-    void setup(HSV leds_hsv[]);
+    void setup();
 
 public:
     typedef std::list<IAnimation *> AnimationsList;
