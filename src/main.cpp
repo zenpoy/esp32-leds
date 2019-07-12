@@ -31,9 +31,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
-  if (strcmp("animations/alterego", topic) == 0) {
-    fsManager.SaveToFs("/music/alterego", payload, length);
-    animationsContainer.SetFromJson("alterego", (const char *)payload);
+  if (strncmp("animations/", topic, 11) == 0) {
+    int songNameStartIndex = 11 + strlen(thingname) + 1;
+    String songName = String(topic + songNameStartIndex);
+    fsManager.SaveToFs((String("/music/") + songName).c_str(), payload, length);
+    animationsContainer.SetFromJson(songName.c_str(), (const char *)payload);
   } else if(strcmp("current-song", topic) == 0) {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
   } else if(strcmp("objects-config", topic) == 0) {
@@ -62,9 +64,9 @@ void connectToMessageBroker() {
     client.setCallback(callback);
     if(client.connect(thingname)) {
         Serial.println("connected to message broker");
-        client.subscribe("animations/#", 1);
         client.subscribe("current-song", 1);
-        client.subscribe("objects-config", 1);
+        client.subscribe((String("animations/") + String(thingname) + String("/#")).c_str(), 1);
+        client.subscribe((String("objects-config/") + String(thingname)).c_str(), 1);
     }
     else {
         Serial.print("error state:");
