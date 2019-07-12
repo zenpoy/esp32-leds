@@ -7,12 +7,20 @@
 #include <list>
 #include <map>
 
+#define MAX_SUPPORTED_PIXELS 600 
+
 class AnimationFactory {
 
 public:
   static std::list<IAnimation *> *AnimationsListFromJson(const char *jsonStr);
   static IAnimation *CreateAnimation(const JsonObject &animationAsJsonObj);
-  static void InitObjectMap(HSV leds_arr[], const JsonObject &objectsMap);
+  static int InitObjectsConfig(HSV ledsArr[], const JsonObject &objectsMap);
+
+public:
+  static const char *objectsMapErrorString;
+
+private:
+  static const char *InitObjectsMap(HSV ledsArr[], int totalPixels, const JsonObject &objectsMap);
 
 private:
   typedef std::map<std::string, std::vector<HSV *> > LedObjectMap;

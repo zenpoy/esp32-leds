@@ -14,42 +14,65 @@
 #include <Arduino.h>
 
 AnimationFactory::LedObjectMap AnimationFactory::object_map;
+const char *AnimationFactory::objectsMapErrorString = "no configuration availible - initialized not called";
 
-std::vector<HSV *> GetPixelsFromStartToEnd(int start, int end, HSV leds_hsv[]) {
-  int size = end-start;
-  std::vector<HSV *> pixelsVec(size);
-  int globalIndex = start;
-  for(int i=0; i<size; ++i) {
-    pixelsVec[i] = &(leds_hsv[globalIndex]);
-    globalIndex++;
+int AnimationFactory::InitObjectsConfig(HSV ledsArr[], const JsonObject &doc) {
+
+  int totalPixels = doc["total_pixels"];
+  if(totalPixels < 0) {
+    objectsMapErrorString = "total pixels is negative";
+    return 0;
   }
-  return pixelsVec;
+  if(totalPixels > MAX_SUPPORTED_PIXELS) {
+    objectsMapErrorString = "total pixels too large";
+    return 0;
+  }
+  if(totalPixels == 0) {
+    objectsMapErrorString = "total pixels is zero (probably error in json format)";
+    return 0;
+  }
+
+  const JsonObject &objectsMap = doc["objects"];
+  const char *objectsMapErr = InitObjectsMap(ledsArr, totalPixels, objectsMap);
+  if(objectsMapErr != NULL) {
+    object_map = AnimationFactory::LedObjectMap();
+    objectsMapErrorString = objectsMapErr;
+    return 0;
+  }
+
+  // all went well
+  objectsMapErrorString = NULL;
+  return totalPixels;
 }
 
-std::vector<HSV *> GetPixelsFromIndices(const std::vector<int> &indices, HSV leds_hsv[])
+const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, const JsonObject &objectsMap) 
 {
-  std::vector<HSV *> pixelsVec(indices.size());
-  for(int i=0; i<indices.size(); ++i) {
-    int globalIndex = indices[i];
-    pixelsVec[i] = &(leds_hsv[globalIndex]);
-  }
-  return pixelsVec;
-}
-
-void AnimationFactory::InitObjectMap(HSV leds_hsv[], const JsonObject &objectsMap) {
-
   for (JsonPair p : objectsMap) {
-      const char* key = p.key().c_str();
-      JsonArray indices = p.value().as<JsonArray>();
 
-      object_map[key].reserve(indices.size());
-      for(JsonVariant index : indices) {
-        int pixelIndex = index.as<int>();
-        HSV *pixelPtr = &(leds_hsv[pixelIndex]);
-        object_map[key].push_back(pixelPtr);
-      }
+    const char* key = p.key().c_str();
+    JsonArray indices = p.value().as<JsonArray>();
+
+    size_t numIndices = indices.size();
+    if(numIndices == 0)
+        return "object in the map has no configured indices (probably error in json format)";
+
+    object_map[key].reserve(numIndices);
+    for(JsonVariant index : indices) {
+
+      if(!index.is<int>())
+        return "pixel index not integer";
+      int pixelIndex = index.as<int>();
+
+      // check for pixel index out of bounds
+      if(pixelIndex >= totalPixels || pixelIndex < 0)
+        return "pixel index out of range";
+
+      HSV *pixelPtr = &(ledsArr[pixelIndex]);
+      object_map[key].push_back(pixelPtr);
+    }
   }
 
+  return NULL;
 }
 
 std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(const char *jsonStr) {

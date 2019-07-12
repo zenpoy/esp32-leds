@@ -1,7 +1,7 @@
 #include <animations/const_color.h>
 
 ConstColorAnimation::~ConstColorAnimation() {
-  
+
 }
 
 void ConstColorAnimation::InitFromJson(const JsonObject &animation_params) {

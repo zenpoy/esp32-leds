@@ -78,10 +78,14 @@ void HandleObjectsConfig(const char *jsonBuf) {
   DynamicJsonDocument doc(1024);
   deserializeJson(doc, jsonBuf);
 
-  int totalPixels = doc["total_pixels"];
-  Serial.println(totalPixels);
-
-  AnimationFactory::InitObjectMap(leds_hsv, doc["objects"]);
+  int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc.as<JsonObject>());
+  if(AnimationFactory::objectsMapErrorString == NULL) {
+    Serial.print("total pixels: ");
+    Serial.println(totalPixels);
+  } else {
+    Serial.print("objects map encountered an error while initializing: ");
+    Serial.println(AnimationFactory::objectsMapErrorString);
+  }
 }
 
 void Task1code( void * parameter) {
