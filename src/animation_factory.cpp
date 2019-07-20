@@ -106,7 +106,7 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
 
   if (strcmp(animation_name, "const") == 0) {
     generated_animation = new ConstColorAnimation();
-  } else if(strcmp(animation_name, "set_brightness") == 0) {
+  } else if(strcmp(animation_name, "brightness") == 0) {
     generated_animation = new SetBrightnessAnimation();
   } else if(strcmp(animation_name, "hue_shift") == 0) {
     generated_animation = new HueShiftAnimation();
