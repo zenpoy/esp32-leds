@@ -10,8 +10,8 @@ public:
 
     void InitFromJson(const JsonObject &animation_params)
     {
-        numberOfSpreads = animation_params["num_of_spreads"];
-        initialState = animation_params["initial_state"];
+        numberOfSpreads = animation_params["num"];
+        initialState = animation_params["init"];
     }
 
     bool GetValue(float relTime)

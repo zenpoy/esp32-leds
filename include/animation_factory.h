@@ -6,6 +6,7 @@
 
 #include <list>
 #include <map>
+#include <ArduinoJson.h>
 #include <SPIFFS.h>
 
 
@@ -14,7 +15,7 @@
 class AnimationFactory {
 
 public:
-  static std::list<IAnimation *> *AnimationsListFromJson(const char *jsonStr);
+  static std::list<IAnimation *> *AnimationsListFromJson(JsonDocument &doc);
   static IAnimation *CreateAnimation(const JsonObject &animationAsJsonObj);
   static int InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &f);
 

@@ -10,9 +10,9 @@ AlternateAnimation::~AlternateAnimation() {
 }
 
 void AlternateAnimation::InitFromJson(const JsonObject &animation_params) {
-    alternateState = BooleanFuncFactory(animation_params["alternate_state"]);
-    numberOfPixels = animation_params["num_of_pixels"];
-    hueShift = FloatAnimationFactory(animation_params["hue_shift"]);
+    numberOfPixels = animation_params["numPix"];
+    alternateState = BooleanFuncFactory(animation_params["stateFunc"]);
+    hueShift = FloatAnimationFactory(animation_params["hueShiftFunc"]);
 }
 
 void AlternateAnimation::Render(float rel_time) {

@@ -9,10 +9,10 @@ public:
     virtual ~IBooleanFunc() {}
 
 public:
-    virtual void InitFromJson(const JsonObject &animation_params) = 0;
+    virtual void InitFromJson(const JsonObject &func_params) = 0;
     virtual bool GetValue(float relTime) = 0;
 };
 
-IBooleanFunc *BooleanFuncFactory(const JsonObject &animation_params);
+IBooleanFunc *BooleanFuncFactory(const JsonObject &func_params);
 
 #endif // __I_BOOLEAN_FUNC_H__

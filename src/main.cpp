@@ -40,7 +40,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     int songNameStartIndex = 11 + strlen(thingname) + 1;
     String songName = String(topic + songNameStartIndex);
     fsManager.SaveToFs((String("/music/") + songName).c_str(), payload, length);
-    animationsContainer.SetFromJson(songName.c_str(), (const char *)payload);
+    animationsContainer.SetFromJsonFile(songName, doc);
   } else if(strcmp("current-song", topic) == 0) {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
   } else if(strncmp("objects-config", topic, 14) == 0) {
@@ -85,7 +85,7 @@ void connectToMessageBroker() {
 
 void HandleObjectsConfig(File &f) {
 
-  int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc, f); //doc.as<JsonObject>());
+  int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc, f);
   if(AnimationFactory::objectsMapErrorString == NULL) {
     Serial.print("total pixels: ");
     Serial.println(totalPixels);
@@ -106,9 +106,6 @@ void Task1code( void * parameter) {
   }
 }
 
-const int bufLen = 4096;
-char buf[bufLen];
-
 void setup() {
   Serial.begin(115200);
   disableCore0WDT();
@@ -116,8 +113,6 @@ void setup() {
   fsManager.setup();
   animationsContainer.setup();
   renderUtils.Setup();
-
-  int bytesRead;
 
   File file = SPIFFS.open("/objects-config");
   if(file){
@@ -128,18 +123,7 @@ void setup() {
       Serial.println("Failed to open file for reading");
   }
 
-
-  // memset(buf, 0, bufLen);
-  // bytesRead = fsManager.ReadFromFs("/objects-config", (uint8_t *)buf, bufLen);
-  // if(bytesRead > 0) {
-  //   HandleObjectsConfig(buf, bytesRead);
-  // }
-
-  memset(buf, 0, bufLen);
-  bytesRead = fsManager.ReadFromFs("/music/alterego", (uint8_t *)buf, bufLen);
-  if(bytesRead > 0) {
-    animationsContainer.SetFromJson("alterego", buf);
-  }
+  animationsContainer.SetFromJsonFile("alterego", doc);
 
   xTaskCreatePinnedToCore(
       Task1code, /* Function to implement the task */

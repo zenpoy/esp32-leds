@@ -1,5 +1,6 @@
 #include "animations_container.h"
 
+#include <SPIFFS.h>
 #include <animation_factory.h>
 
 AnimationsContainer::AnimationsContainer() {
@@ -11,13 +12,42 @@ void AnimationsContainer::setup() {
 
 }
 
-void AnimationsContainer::SetFromJson(const std::string &songName, const char *jsonStr) {
-  std::list<IAnimation *> *animationsListPtr = AnimationFactory::AnimationsListFromJson(jsonStr);
+void AnimationsContainer::SetFromJsonFile(const String &songName, JsonDocument &docForParsing) {
 
-  // update the map
+  bool success = InitJsonDocFromFile(songName, docForParsing);
+  if(!success) {
+    return;
+  }
+  std::list<IAnimation *> *animationsListPtr = AnimationFactory::AnimationsListFromJson(docForParsing);
+  if(animationsListPtr == NULL) {
+    return;
+  }
+
+  UpdateWithNewAnimationsList(songName, animationsListPtr);
+}
+
+const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsList(const String &songName, unsigned int currentSongOffsetMs) 
+{
+
   xSemaphoreTake(mapMutex, portMAX_DELAY);
 
-  std::map<std::string, AnimationsList *>::iterator it = availibleAnimations.find(songName);
+  std::map<String, AnimationsList *>::iterator it = availibleAnimations.find(songName);
+  if(it == availibleAnimations.end())
+  {
+    xSemaphoreGive(mapMutex);
+    return emptyAnimationsList;
+  }
+  
+  AnimationsContainer::AnimationsList *animationsList = it->second;
+  xSemaphoreGive(mapMutex);
+  return animationsList;
+}
+
+void AnimationsContainer::UpdateWithNewAnimationsList(const String &songName, std::list<IAnimation *> *animationsListPtr)
+{
+  xSemaphoreTake(mapMutex, portMAX_DELAY);
+
+  std::map<String, AnimationsList *>::iterator it = availibleAnimations.find(songName);
   if(it == availibleAnimations.end()) 
   {
     availibleAnimations.insert(std::make_pair(songName, animationsListPtr));
@@ -30,21 +60,23 @@ void AnimationsContainer::SetFromJson(const std::string &songName, const char *j
   xSemaphoreGive(mapMutex);
 }
 
-const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsList(const std::string &songName, unsigned int currentSongOffsetMs) 
+bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing) 
 {
-
-  xSemaphoreTake(mapMutex, portMAX_DELAY);
-
-  std::map<std::string, AnimationsList *>::iterator it = availibleAnimations.find(songName);
-  if(it == availibleAnimations.end())
-  {
-    xSemaphoreGive(mapMutex);
-    return emptyAnimationsList;
+  File file = SPIFFS.open((String("/music/") + songName).c_str());
+  if(!file) {
+    Serial.print("could not find file in FS: ");
+    Serial.println(songName);
+    return false;
   }
-  
-  AnimationsContainer::AnimationsList *animationsList = it->second;
-  xSemaphoreGive(mapMutex);
-  return animationsList;
+
+  DeserializationError err = deserializeJson(docForParsing, file);
+  file.close();
+  if(err) {
+    Serial.println("error deserializing animations json");
+    return false;
+  }
+
+  return true;
 }
 
 void AnimationsContainer::ClearUnusedAnimations() 

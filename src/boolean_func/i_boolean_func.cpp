@@ -3,9 +3,9 @@
 #include <boolean_func/const_boolean_func.h>
 #include <boolean_func/equal_spreads_boolean_func.h>
 
-IBooleanFunc *BooleanFuncFactory(const JsonObject &animation_params) {
+IBooleanFunc *BooleanFuncFactory(const JsonObject &func_params) {
 
-    const char *func_type = animation_params["type"];
+    const char *func_type = func_params["t"];
     if(func_type == NULL) {
         return NULL;
     }
@@ -13,14 +13,15 @@ IBooleanFunc *BooleanFuncFactory(const JsonObject &animation_params) {
     IBooleanFunc *func = NULL;
     if(strcmp(func_type, "const") == 0) {
         func = new ConstBooleanFunc();
-    } else if(strcmp(func_type, "equal_spreads") == 0) {
+    } else if(strcmp(func_type, "equalSpreads") == 0) {
         func = new EqualSpreadBooleanFunc();
     }
 
-    if(func != NULL) {
-        const JsonObject &params = animation_params["params"];
-        func->InitFromJson(params);
+    if(func == NULL) {
+        return NULL;
     }
+
+    func->InitFromJson(func_params);
 
     return func;
 }

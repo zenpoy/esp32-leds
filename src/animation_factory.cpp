@@ -7,7 +7,6 @@
 #include <animations/alternate.h>
 #include <animations/fill.h>
 
-#include <ArduinoJson.h>
 #include <Arduino.h>
 
 AnimationFactory::LedObjectMap AnimationFactory::object_map;
@@ -78,9 +77,8 @@ const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, con
   return NULL;
 }
 
-std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(const char *jsonStr) {
-  DynamicJsonDocument doc(2048);
-  deserializeJson(doc, jsonStr);
+std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &doc) {
+
   JsonArray array = doc.as<JsonArray>();
 
   std::list<IAnimation *> *animationsList = new std::list<IAnimation *>();
@@ -88,6 +86,10 @@ std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(const char *js
     IAnimation *animationObj = CreateAnimation(array.getElement(i).as<JsonObject>()); 
     animationsList->push_back(animationObj);
   }
+
+  Serial.print("successfully read animations from file. found ");
+  Serial.print(array.size());
+  Serial.println(" animations");
 
   return animationsList;
 }
