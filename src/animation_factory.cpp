@@ -3,8 +3,6 @@
 #include <animations/const_color.h>
 #include <animations/set_brightness.h>
 #include <animations/hue_shift.h>
-#include <animations/fade_out.h>
-#include <animations/fade_in.h>
 #include <animations/rainbow.h>
 #include <animations/alternate.h>
 #include <animations/fill.h>
@@ -110,10 +108,6 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new SetBrightnessAnimation();
   } else if(strcmp(animation_name, "hue_shift") == 0) {
     generated_animation = new HueShiftAnimation();
-  } else if(strcmp(animation_name, "fade_out") == 0) {
-    generated_animation = new FadeOutAnimation();
-  } else if(strcmp(animation_name, "fade_in") == 0) {
-    generated_animation = new FadeInAnimation();
   } else if(strcmp(animation_name, "rainbow") == 0) {
     generated_animation = new RainbowAnimation();
   } else if(strcmp(animation_name, "alternate") == 0) {
