@@ -10,9 +10,9 @@ class StepsFloatFunc : public IFloatFunc {
 public:
 
     void InitFromJson(const JsonObject &func_params) {
-        numSteps = func_params["num_steps"];
-        valueDiff = func_params["value_diff"];
-        firstStepValue = func_params["first_step_value"];
+        numSteps = func_params["num"];
+        valueDiff = func_params["diff"];
+        firstStepValue = func_params["init"];
     }
 
     float GetValue(float relTime) {

@@ -10,10 +10,10 @@ class SinFloatFunc : public IFloatFunc {
 public:
 
     void InitFromJson(const JsonObject &func_params) {
-        min_value = func_params["min_value"];
-        max_value = func_params["max_value"];
+        min_value = func_params["min"];
+        max_value = func_params["max"];
         phase = func_params["phase"];
-        repeats = func_params["repeats"];
+        repeats = func_params["rep"];
 
         diff_max_to_min = max_value - min_value;
     }

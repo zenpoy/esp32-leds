@@ -9,7 +9,7 @@
 
 IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
 
-    const char *func_type = animation_params["type"];
+    const char *func_type = animation_params["t"];
     if(func_type == NULL) {
         return NULL;
     }
@@ -17,11 +17,11 @@ IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
     IFloatFunc *func = NULL;
     if(strcmp(func_type, "const") == 0) {
         func = new ConstFloatFunc();
-    } else if(strcmp(func_type, "linear") == 0) {
+    } else if(strcmp(func_type, "lin") == 0) {
         func = new LinearFloatFunc();
     } else if(strcmp(func_type, "sin") == 0) {
         func = new SinFloatFunc();
-    } else if(strcmp(func_type, "segment") == 0) {
+    } else if(strcmp(func_type, "seg") == 0) {
         func = new SegmentFloatFunc();
     } else if(strcmp(func_type, "steps") == 0) {
         func = new StepsFloatFunc();
@@ -29,11 +29,11 @@ IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
         func = new RepeateFloatFunc();
     }
 
-    if(func != NULL) {
-        const JsonObject &params = animation_params["params"];
-        func->InitFromJson(params);
+    if(func == NULL) {
+        return NULL;
     }
 
+    func->InitFromJson(animation_params);
     return func;
 }
 

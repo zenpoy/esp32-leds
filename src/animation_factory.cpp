@@ -6,7 +6,6 @@
 #include <animations/fade_out.h>
 #include <animations/fade_in.h>
 #include <animations/rainbow.h>
-#include <animations/random_hue.h>
 #include <animations/alternate.h>
 #include <animations/fill.h>
 
@@ -16,7 +15,13 @@
 AnimationFactory::LedObjectMap AnimationFactory::object_map;
 const char *AnimationFactory::objectsMapErrorString = "no configuration availible - initialized not called";
 
-int AnimationFactory::InitObjectsConfig(HSV ledsArr[], const JsonObject &doc) {
+int AnimationFactory::InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &f) {
+
+  DeserializationError jsonError = deserializeJson(doc, f);
+  if(jsonError) {
+    objectsMapErrorString = "json deserialize error";
+    return 0;
+  }
 
   int totalPixels = doc["total_pixels"];
   if(totalPixels < 0) {
@@ -93,13 +98,13 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
   
   IAnimation *generated_animation = NULL;
 
-  const char * animation_name = animationAsJsonObj["animation_name"];
-  int startTime = animationAsJsonObj["start_time"];
-  int endTime = animationAsJsonObj["end_time"];
-  const char *pixels_name = animationAsJsonObj["pixels_name"];
-  JsonObject animation_params = animationAsJsonObj["animation_params"];
+  const char * animation_name = animationAsJsonObj["t"];
+  int startTime = animationAsJsonObj["s"];
+  int endTime = animationAsJsonObj["e"];
+  const char *pixels_name = animationAsJsonObj["p"];
+  JsonObject animation_params = animationAsJsonObj["params"];
 
-  if (strcmp(animation_name, "const_color") == 0) {
+  if (strcmp(animation_name, "const") == 0) {
     generated_animation = new ConstColorAnimation();
   } else if(strcmp(animation_name, "set_brightness") == 0) {
     generated_animation = new SetBrightnessAnimation();
@@ -111,8 +116,6 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new FadeInAnimation();
   } else if(strcmp(animation_name, "rainbow") == 0) {
     generated_animation = new RainbowAnimation();
-  } else if(strcmp(animation_name, "random_hue") == 0) {
-    generated_animation = new RandomHueAnimation();
   } else if(strcmp(animation_name, "alternate") == 0) {
     generated_animation = new AlternateAnimation();
   } else if(strcmp(animation_name, "fill") == 0) {

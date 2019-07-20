@@ -6,6 +6,8 @@
 
 #include <list>
 #include <map>
+#include <SPIFFS.h>
+
 
 #define MAX_SUPPORTED_PIXELS 600 
 
@@ -14,7 +16,7 @@ class AnimationFactory {
 public:
   static std::list<IAnimation *> *AnimationsListFromJson(const char *jsonStr);
   static IAnimation *CreateAnimation(const JsonObject &animationAsJsonObj);
-  static int InitObjectsConfig(HSV ledsArr[], const JsonObject &objectsMap);
+  static int InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &f);
 
 public:
   static const char *objectsMapErrorString;

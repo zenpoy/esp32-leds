@@ -11,6 +11,9 @@
 #include <num_leds.h>
 #include <animation_factory.h>
 
+#include "SPIFFS.h"
+
+
 HSV leds_hsv[NUM_LEDS];
 RenderUtils renderUtils(leds_hsv, NUM_LEDS);
 SongOffsetTracker songOffsetTracker;
@@ -18,6 +21,8 @@ AnimationsContainer animationsContainer;
 FsManager fsManager;
 
 TaskHandle_t Task1;
+
+StaticJsonDocument<32768> doc;
 
 void callback(char* topic, byte* payload, unsigned int length) {
 
@@ -38,8 +43,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
     animationsContainer.SetFromJson(songName.c_str(), (const char *)payload);
   } else if(strcmp("current-song", topic) == 0) {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
-  } else if(strcmp("objects-config", topic) == 0) {
+  } else if(strncmp("objects-config", topic, 14) == 0) {
     fsManager.SaveToFs("/objects-config", payload, length);
+    ESP.restart();
   }
 
 }
@@ -47,6 +53,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void connectToWifi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
+    Serial.print("Thing name: ");
+    Serial.println(thingname);
     Serial.printf("Attempting to connect to SSID: ");
     Serial.printf(ssid);
     while (WiFi.status() != WL_CONNECTED)
@@ -64,9 +72,9 @@ void connectToMessageBroker() {
     client.setCallback(callback);
     if(client.connect(thingname)) {
         Serial.println("connected to message broker");
+        client.subscribe((String("objects-config/") + String(thingname)).c_str(), 1);
         client.subscribe("current-song", 1);
         client.subscribe((String("animations/") + String(thingname) + String("/#")).c_str(), 1);
-        client.subscribe((String("objects-config/") + String(thingname)).c_str(), 1);
     }
     else {
         Serial.print("error state:");
@@ -75,12 +83,9 @@ void connectToMessageBroker() {
 
 }
 
-void HandleObjectsConfig(const char *jsonBuf) {
+void HandleObjectsConfig(File &f) {
 
-  DynamicJsonDocument doc(1024);
-  deserializeJson(doc, jsonBuf);
-
-  int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc.as<JsonObject>());
+  int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc, f); //doc.as<JsonObject>());
   if(AnimationFactory::objectsMapErrorString == NULL) {
     Serial.print("total pixels: ");
     Serial.println(totalPixels);
@@ -101,6 +106,9 @@ void Task1code( void * parameter) {
   }
 }
 
+const int bufLen = 4096;
+char buf[bufLen];
+
 void setup() {
   Serial.begin(115200);
   disableCore0WDT();
@@ -109,17 +117,26 @@ void setup() {
   animationsContainer.setup();
   renderUtils.Setup();
 
-  char buf[2048];
   int bytesRead;
 
-  memset(buf, 0, 2048);
-  bytesRead = fsManager.ReadFromFs("/objects-config", (uint8_t *)buf, 2048);
-  if(bytesRead > 0) {
-    HandleObjectsConfig(buf);
+  File file = SPIFFS.open("/objects-config");
+  if(file){
+      HandleObjectsConfig(file);
+      file.close();
+  }
+  else {
+      Serial.println("Failed to open file for reading");
   }
 
-  memset(buf, 0, 2048);
-  bytesRead = fsManager.ReadFromFs("/music/alterego", (uint8_t *)buf, 2048);
+
+  // memset(buf, 0, bufLen);
+  // bytesRead = fsManager.ReadFromFs("/objects-config", (uint8_t *)buf, bufLen);
+  // if(bytesRead > 0) {
+  //   HandleObjectsConfig(buf, bytesRead);
+  // }
+
+  memset(buf, 0, bufLen);
+  bytesRead = fsManager.ReadFromFs("/music/alterego", (uint8_t *)buf, bufLen);
   if(bytesRead > 0) {
     animationsContainer.SetFromJson("alterego", buf);
   }

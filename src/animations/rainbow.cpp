@@ -10,8 +10,8 @@ RainbowAnimation::~RainbowAnimation() {
 }
 
 void RainbowAnimation::InitFromJson(const JsonObject &animation_params) {
-  start_hue = FloatAnimationFactory(animation_params["start_hue"]);
-  end_hue = FloatAnimationFactory(animation_params["end_hue"]);
+  start_hue = FloatAnimationFactory(animation_params["startHue"]);
+  end_hue = FloatAnimationFactory(animation_params["endHue"]);
 }
 
 void RainbowAnimation::Render(float rel_time) {

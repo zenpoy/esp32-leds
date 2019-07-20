@@ -8,7 +8,7 @@ class ConstFloatFunc : public IFloatFunc {
 public:
 
     void InitFromJson(const JsonObject &func_params) {
-        value_to_return = func_params["value"];
+        value_to_return = func_params["val"];
     }
 
     float GetValue(float relTime) {
