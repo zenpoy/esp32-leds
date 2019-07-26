@@ -5,7 +5,9 @@
 #include <float_func/sin_float_func.h>
 #include <float_func/segment_float_func.h>
 #include <float_func/steps.h>
-#include <float_func/repeate_float_func.h>
+#include <float_func/repeat_float_func.h>
+#include <float_func/comb2.h>
+#include <float_func/half.h>
 
 IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
 
@@ -25,8 +27,12 @@ IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
         func = new SegmentFloatFunc();
     } else if(strcmp(func_type, "steps") == 0) {
         func = new StepsFloatFunc();
-    } else if(strcmp(func_type, "repeate") == 0) {
-        func = new RepeateFloatFunc();
+    } else if(strcmp(func_type, "repeat") == 0) {
+        func = new RepeatFloatFunc();
+    } else if(strcmp(func_type, "comb2") == 0) {
+        func = new Comb2FloatFunc();
+    } else if(strcmp(func_type, "half") == 0) {
+        func = new HalfFloatFunc();
     }
 
     if(func == NULL) {

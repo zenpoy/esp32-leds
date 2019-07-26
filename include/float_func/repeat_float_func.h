@@ -1,21 +1,21 @@
-#ifndef __REPEATE_FLOAT_FUNC_H__
-#define __REPEATE_FLOAT_FUNC_H__
+#ifndef __REPEAT_FLOAT_FUNC_H__
+#define __REPEAT_FLOAT_FUNC_H__
 
 #include <float_func/i_float_func.h>
 
 #include <math.h>
 
-class RepeateFloatFunc : public IFloatFunc {
+class RepeatFloatFunc : public IFloatFunc {
 
 public:
 
-    ~RepeateFloatFunc() {
+    ~RepeatFloatFunc() {
         delete func;
         func = NULL;
     }
 
     void InitFromJson(const JsonObject &func_params) {
-        numOfTimes = func_params["num_of_times"];
+        numOfTimes = func_params["num"];
         func = FloatAnimationFactory(func_params["func"]);
     }
 
@@ -25,9 +25,9 @@ public:
     }
 
 private:
-    int numOfTimes;
+    float numOfTimes;
     IFloatFunc *func;
 
 };
 
-#endif // __REPEATE_FLOAT_FUNC_H__
+#endif // __REPEAT_FLOAT_FUNC_H__
