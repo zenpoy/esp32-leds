@@ -17,25 +17,36 @@ void SongOffsetTracker::loop() {
     timesync.loop();
 }
 
-void SongOffsetTracker::HandleCurrentSongMessage(char *data) {
+bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
     StaticJsonDocument<1024> doc;
     deserializeJson(doc, data);
 
+    bool currSongChanged = false;
+
     xSemaphoreTake(songDataMutex, portMAX_DELAY);
     {
+        bool wasSongPlaying = isSongPlaying;
         isSongPlaying = doc["song_is_playing"];
         if(isSongPlaying) {
             songStartTimeEpoch = doc["start_time_millis_since_epoch"];
             const char *fileIdPtr = doc["file_id"];
-            fileName = fileIdPtr;
+            currSongChanged = strcmp(fileIdPtr, fileNameFromPlayer.c_str()) != 0;
+            fileNameFromPlayer = fileIdPtr;
 
+            fileName = fileNameFromPlayer;
             int dotIndex = fileName.indexOf('.');
             if(dotIndex >= 0) {
                 fileName.remove(dotIndex);
             }
         }
+        else  {
+            fileName = "";
+            currSongChanged = (wasSongPlaying != isSongPlaying);
+        }
     }
     xSemaphoreGive(songDataMutex);
+
+    return currSongChanged;
 }
 
 bool SongOffsetTracker::GetCurrentSongDetails(unsigned long currentEspMillis, CurrentSongDetails *outSongDetails) {

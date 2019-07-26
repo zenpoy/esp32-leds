@@ -41,8 +41,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
     String songName = String(topic + songNameStartIndex);
     fsManager.SaveToFs((String("/music/") + songName).c_str(), payload, length);
     animationsContainer.SetFromJsonFile(songName, doc);
+
   } else if(strcmp("current-song", topic) == 0) {
-    songOffsetTracker.HandleCurrentSongMessage((char *)payload);
+    bool fileChanged = songOffsetTracker.HandleCurrentSongMessage((char *)payload);
+    if(fileChanged) {
+      Serial.println("current song changed, loading animations");
+      animationsContainer.SetFromJsonFile(songOffsetTracker.GetCurrentFile(), doc);
+    }
+    
   } else if(strncmp("objects-config", topic, 14) == 0) {
     fsManager.SaveToFs("/objects-config", payload, length);
     ESP.restart();
@@ -122,8 +128,6 @@ void setup() {
   else {
       Serial.println("Failed to open file for reading");
   }
-
-  animationsContainer.SetFromJsonFile("alterego", doc);
 
   xTaskCreatePinnedToCore(
       Task1code, /* Function to implement the task */

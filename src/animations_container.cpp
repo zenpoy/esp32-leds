@@ -46,7 +46,12 @@ const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsLis
 void AnimationsContainer::UpdateWithNewAnimationsList(const String &songName, std::list<IAnimation *> *animationsListPtr)
 {
   xSemaphoreTake(mapMutex, portMAX_DELAY);
+  UpdateWithNewAnimationsListLocked(songName, animationsListPtr);
+  xSemaphoreGive(mapMutex);
+}
 
+void AnimationsContainer::UpdateWithNewAnimationsListLocked(const String &songName, std::list<IAnimation *> *animationsListPtr)
+{
   std::map<String, AnimationsList *>::iterator it = availibleAnimations.find(songName);
   if(it == availibleAnimations.end()) 
   {
@@ -57,7 +62,6 @@ void AnimationsContainer::UpdateWithNewAnimationsList(const String &songName, st
     // TODO: delete the old value, or move it to delete queue
     it->second = animationsListPtr;
   }
-  xSemaphoreGive(mapMutex);
 }
 
 bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing) 

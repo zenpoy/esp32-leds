@@ -27,6 +27,7 @@ public:
 
 private:
     void UpdateWithNewAnimationsList(const String &songName, std::list<IAnimation *> *animationsListPtr);
+    void UpdateWithNewAnimationsListLocked(const String &songName, std::list<IAnimation *> *animationsListPtr);
     static bool InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing);
 
 private:
