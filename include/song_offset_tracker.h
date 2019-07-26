@@ -3,9 +3,16 @@
 
 #include <timesync.h>
 
+struct CurrentSongDetails {
+    bool valid;
+    String songName;
+    int32_t offsetMs;
+};
+
 class SongOffsetTracker
 {
     public:
+        SongOffsetTracker();
         void setup(const IPAddress &timeServerIP, uint16_t timeServerPort);
         void loop();
 
@@ -13,17 +20,16 @@ class SongOffsetTracker
         void HandleCurrentSongMessage(char *data);
 
     public:
-        /*
-        TODO: this function is not syncrhonized. can cause problem if called from core 1
-        */
-        int32_t GetOffsetMs(unsigned long currentEspMillis);
+        bool GetCurrentSongDetails(unsigned long currentEspMillis, CurrentSongDetails *outSongDetails);
 
     private:
         TimeSync timesync;
 
     private:
+        SemaphoreHandle_t songDataMutex; // mutex to access these fields from deferent cores
         bool isSongPlaying = false;
         uint64_t songStartTimeEpoch; // valid only if isSongPlaying is true
+        String fileName; // valid only if isSongPlaying is true
 };
 
 

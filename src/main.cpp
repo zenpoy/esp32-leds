@@ -136,14 +136,18 @@ void setup() {
 
 }
 
+// we keep this object once so we don't need to create the string on every loop
+CurrentSongDetails songDetails;
+
 void loop() {
 
   renderUtils.Clear();
 
   unsigned long currentMillis = millis();
-  int32_t songOffset = songOffsetTracker.GetOffsetMs(currentMillis);
-  if(songOffset >= 0) {
-    const AnimationsContainer::AnimationsList *currList = animationsContainer.GetAnimationsList("alterego", songOffset);
+  bool hasValidSong = songOffsetTracker.GetCurrentSongDetails(currentMillis, &songDetails);
+  if(hasValidSong && songDetails.offsetMs >= 0) {
+    unsigned long songOffset = (unsigned long)songDetails.offsetMs;
+    const AnimationsContainer::AnimationsList *currList = animationsContainer.GetAnimationsList(songDetails.songName, songOffset);
     // Serial.print("number of animations: ");
     // Serial.println(currList->size());
     for(AnimationsContainer::AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++) {
