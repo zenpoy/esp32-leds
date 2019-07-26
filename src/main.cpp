@@ -144,6 +144,8 @@ void loop() {
   int32_t songOffset = songOffsetTracker.GetOffsetMs(currentMillis);
   if(songOffset >= 0) {
     const AnimationsContainer::AnimationsList *currList = animationsContainer.GetAnimationsList("alterego", songOffset);
+    // Serial.print("number of animations: ");
+    // Serial.println(currList->size());
     for(AnimationsContainer::AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++) {
       IAnimation *animation = *it;
       if(animation != nullptr && animation->IsActive(songOffset)) {
@@ -152,5 +154,7 @@ void loop() {
     }
   }
   unsigned long renderLoopTime = millis() - currentMillis;
+  // Serial.print("loop time ms: ");
+  // Serial.println(renderLoopTime);
   renderUtils.Show();
 }

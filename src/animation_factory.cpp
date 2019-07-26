@@ -6,6 +6,7 @@
 #include <animations/rainbow.h>
 #include <animations/alternate.h>
 #include <animations/fill.h>
+#include <animations/snake.h>
 
 #include <Arduino.h>
 
@@ -116,7 +117,10 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new AlternateAnimation();
   } else if(strcmp(animation_name, "fill") == 0) {
     generated_animation = new FillAnimation();
+  } else if(strcmp(animation_name, "snake") == 0) {
+    generated_animation = new SnakeAnimation();
   }
+  
 
   if (generated_animation != NULL) {
     generated_animation->InitAnimation(object_map[pixels_name], startTime, endTime);
