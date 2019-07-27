@@ -31,15 +31,16 @@ private:
     static bool InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing);
 
 private:
-    void ClearUnusedAnimations();
+    void DeleteAnimationsList(AnimationsList *listToDelete);
+    void DeleteListIfPossible(AnimationsList *listToDelete);
 
 private:
     std::map<String, AnimationsList *> availibleAnimations;
     const AnimationsList *emptyAnimationsList;
 
-    // we cannot delete lists from the map from core 0 since core 1 might still be using them.
-    // so we put it in this list, and erase from it when it's safe
-    std::list<AnimationsList *> animationsForDelete;
+    // this animation list is in use by the rendered, and should not be deleted until it is safe
+    AnimationsList *lockedAnimationPtr = nullptr;
+    bool deleteLockedWhenUnused = false;
 
     SemaphoreHandle_t mapMutex;
 };

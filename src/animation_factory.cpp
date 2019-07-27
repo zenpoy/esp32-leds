@@ -7,6 +7,7 @@
 #include <animations/alternate.h>
 #include <animations/fill.h>
 #include <animations/snake.h>
+#include <animations/alternate_coloring.h>
 
 #include <Arduino.h>
 
@@ -119,6 +120,8 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new FillAnimation();
   } else if(strcmp(animation_name, "snake") == 0) {
     generated_animation = new SnakeAnimation();
+  } else if(strcmp(animation_name, "al") == 0) {
+    generated_animation = new AlternateColoringAnimation();
   }
   
 

@@ -31,6 +31,12 @@ const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsLis
 
   xSemaphoreTake(mapMutex, portMAX_DELAY);
 
+  if(deleteLockedWhenUnused) {
+    DeleteAnimationsList(lockedAnimationPtr);
+  }
+  lockedAnimationPtr = nullptr;
+  deleteLockedWhenUnused = false;
+
   std::map<String, AnimationsList *>::iterator it = availibleAnimations.find(songName);
   if(it == availibleAnimations.end())
   {
@@ -38,9 +44,11 @@ const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsLis
     return emptyAnimationsList;
   }
   
-  AnimationsContainer::AnimationsList *animationsList = it->second;
+  // lock this animations list so it will not be deleted from other core
+  lockedAnimationPtr = it->second;
+
   xSemaphoreGive(mapMutex);
-  return animationsList;
+  return lockedAnimationPtr;
 }
 
 void AnimationsContainer::UpdateWithNewAnimationsList(const String &songName, std::list<IAnimation *> *animationsListPtr)
@@ -58,8 +66,7 @@ void AnimationsContainer::UpdateWithNewAnimationsListLocked(const String &songNa
     availibleAnimations.insert(std::make_pair(songName, animationsListPtr));
   }
   else {
-    animationsForDelete.push_back(it->second);
-    // TODO: delete the old value, or move it to delete queue
+    DeleteListIfPossible(it->second);
     it->second = animationsListPtr;
   }
 }
@@ -76,22 +83,36 @@ bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocume
   DeserializationError err = deserializeJson(docForParsing, file);
   file.close();
   if(err) {
-    Serial.println("error deserializing animations json");
+    Serial.print("error deserializing animations json: ");
+    Serial.println(err.c_str());
     return false;
   }
 
   return true;
 }
 
-void AnimationsContainer::ClearUnusedAnimations() 
+void AnimationsContainer::DeleteAnimationsList(AnimationsList *listToDelete)
 {
-  for(std::list<AnimationsList *>::iterator it = animationsForDelete.begin(); it != animationsForDelete.end(); it++) {
-    AnimationsList *listToDelete = *it;
-    for(AnimationsList::iterator animationIt = listToDelete->begin(); animationIt != listToDelete->end(); animationIt++) {
-      IAnimation *animation = *animationIt;
-      delete animation;
-    }
-    delete listToDelete;
+  if(listToDelete == nullptr)
+    return;
+
+  Serial.print("deleting animations list with ");
+  Serial.print(listToDelete->size());
+  Serial.println(" animations");
+  for(AnimationsList::iterator animationIt = listToDelete->begin(); animationIt != listToDelete->end(); animationIt++) {
+    IAnimation *animation = *animationIt;
+    delete animation;
   }
-  animationsForDelete.clear();
+  delete listToDelete;
 }
+
+void AnimationsContainer::DeleteListIfPossible(AnimationsList *listToDelete)
+{
+  if(listToDelete == lockedAnimationPtr) {
+    deleteLockedWhenUnused = true;
+  }
+  else {
+    DeleteAnimationsList(listToDelete);
+  }
+}
+
