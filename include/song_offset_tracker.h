@@ -30,7 +30,7 @@ class SongOffsetTracker
     private:
         SemaphoreHandle_t songDataMutex; // mutex to access these fields from deferent cores
         bool isSongPlaying = false;
-        uint64_t songStartTimeEpoch; // valid only if isSongPlaying is true
+        int64_t songStartTimeEpoch; // valid only if isSongPlaying is true
         String fileNameFromPlayer; // // valid only if isSongPlaying is true
         String fileName; // valid only if isSongPlaying is true
 };

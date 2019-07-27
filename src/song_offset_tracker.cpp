@@ -28,6 +28,7 @@ bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
         bool wasSongPlaying = isSongPlaying;
         isSongPlaying = doc["song_is_playing"];
         if(isSongPlaying) {
+            // saving this value as int64 for easier calculations later
             songStartTimeEpoch = doc["start_time_millis_since_epoch"];
             const char *fileIdPtr = doc["file_id"];
             currSongChanged = strcmp(fileIdPtr, fileNameFromPlayer.c_str()) != 0;
@@ -49,6 +50,26 @@ bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
     return currSongChanged;
 }
 
+// void printInt64(int64_t num) {
+//     char rev[128]; 
+//     char *p = rev+1;
+
+//     if(num < 0) {
+//         Serial.print("-");
+//         num = -num;
+//     }
+
+//     while (num > 0) {
+//         *p++ = '0' + ( num % 10);
+//         num/= 10;
+//     }
+//     p--;
+//     /*Print the number which is now in reverse*/
+//     while (p > rev) {
+//         Serial.print(*p--);
+//     }
+// }
+
 bool SongOffsetTracker::GetCurrentSongDetails(unsigned long currentEspMillis, CurrentSongDetails *outSongDetails) {
 
     outSongDetails->valid = false;
@@ -60,16 +81,16 @@ bool SongOffsetTracker::GetCurrentSongDetails(unsigned long currentEspMillis, Cu
         return false;
     }
 
-    xSemaphoreTake(songDataMutex, portMAX_DELAY);
+    xSemaphoreTake(songDataMutex, portMAX_DELAY); 
+    {
+        // when esp's millis() function returned this time (songStartTime), the song started
+        int32_t songStartTime = (int32_t)(songStartTimeEpoch - timesync.m_espStartTimeMs);
+        portEXIT_CRITICAL(&mux);
 
-    // when esp's millis() function returned this time (songStartTime), the song started
-    uint32_t songStartTime = (uint32_t)(songStartTimeEpoch - timesync.m_espStartTimeMs);
-    portEXIT_CRITICAL(&mux);
-
-    outSongDetails->valid = true;
-    outSongDetails->offsetMs = currentEspMillis - songStartTime;
-    outSongDetails->songName = fileName;
-
+        outSongDetails->valid = true;
+        outSongDetails->offsetMs = currentEspMillis - songStartTime;
+        outSongDetails->songName = fileName;
+    }
     xSemaphoreGive(songDataMutex);
 
     return true;
