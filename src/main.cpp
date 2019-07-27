@@ -101,7 +101,7 @@ void HandleObjectsConfig(File &f) {
   }
 }
 
-void Task1code( void * parameter) {
+void MonitorLoop( void * parameter) {
   connectToWifi();
   connectToMessageBroker();
   IPAddress timeServerIP(10, 0, 0, 200);
@@ -126,13 +126,13 @@ void setup() {
       file.close();
   }
   else {
-      Serial.println("Failed to open file for reading");
+      Serial.println("Failed to open objects config file for reading");
   }
 
   xTaskCreatePinnedToCore(
-      Task1code, /* Function to implement the task */
-      "Task1", /* Name of the task */
-      50000,  /* Stack size in words */
+      MonitorLoop, /* Function to implement the task */
+      "MonitorTask", /* Name of the task */
+      4096,  /* Stack size in words */
       NULL,  /* Task input parameter */
       0,  /* Priority of the task */
       &Task1,  /* Task handle. */
