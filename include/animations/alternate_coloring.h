@@ -14,7 +14,7 @@ public:
 
 private:
     HSV color1, color2;
-    int numberOfPixels;
+    int numberOfPixels = 3;
 };
 
 

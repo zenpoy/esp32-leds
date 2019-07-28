@@ -41,7 +41,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     String songName = String(topic + songNameStartIndex);
     fsManager.SaveToFs((String("/music/") + songName).c_str(), payload, length);
     animationsContainer.SetFromJsonFile(songName, doc);
-
+    
   } else if(strcmp("current-song", topic) == 0) {
     bool fileChanged = songOffsetTracker.HandleCurrentSongMessage((char *)payload);
     if(fileChanged) {

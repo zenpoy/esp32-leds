@@ -6,13 +6,13 @@ AlternateColoringAnimation::~AlternateColoringAnimation() {
 
 void AlternateColoringAnimation::InitFromJson(const JsonObject &animation_params) {
 
-  JsonObject color1Json = animation_params["c1"];
-  color1 = HSV(color1Json);
+    JsonVariant hsv1 = animation_params["hsv1"];
+    JsonVariant hsv2 = animation_params["hsv2"];
 
-  JsonObject color2Json = animation_params["c2"];
-  color2 = HSV(color2Json);
+    color1 = HSV(hsv1.as<JsonArray>());
+    color2 = HSV(hsv2.as<JsonArray>());
 
-  numberOfPixels = animation_params["numPix"];
+    numberOfPixels = animation_params["numPix"];
 }
 
 void AlternateColoringAnimation::Render(float rel_time) {

@@ -88,6 +88,10 @@ bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocume
     return false;
   }
 
+  Serial.print("loaded json from FS. with ");
+  Serial.print(docForParsing.memoryUsage());
+  Serial.println(" bytes");
+
   return true;
 }
 
