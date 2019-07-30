@@ -32,7 +32,7 @@ const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsLis
   xSemaphoreTake(mapMutex, portMAX_DELAY);
 
   if(deleteLockedWhenUnused) {
-    DeleteAnimationsList(lockedAnimationPtr);
+    DeleteAnimationsList((AnimationsContainer::AnimationsList *)lockedAnimationPtr);
   }
   lockedAnimationPtr = nullptr;
   deleteLockedWhenUnused = false;
@@ -48,7 +48,7 @@ const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsLis
   lockedAnimationPtr = it->second;
 
   xSemaphoreGive(mapMutex);
-  return lockedAnimationPtr;
+  return (const AnimationsContainer::AnimationsList *)lockedAnimationPtr;
 }
 
 void AnimationsContainer::UpdateWithNewAnimationsList(const String &songName, std::list<IAnimation *> *animationsListPtr)

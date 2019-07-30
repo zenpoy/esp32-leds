@@ -19,14 +19,23 @@ protected:
 public:
 
   void Render(unsigned long curr_time) {
-    float rel_time = ((float)(curr_time - start_time) / (float)(end_time - start_time));
+    float rel_time = ((float)(curr_time - start_time) / (float)(end_time - start_time));  
+    if(this->repeatNum > 0.0f) { // has repeats - change relTime
+      rel_time = fmod(rel_time * this->repeatNum, 1.0f);
+      // check if a "repeat" function should be rendered for this time
+      if(rel_time < this->repeatStart || rel_time > this->repeatEnd)
+        return;
+    }
     Render(rel_time);
   }
 
-  void InitAnimation(const std::vector<HSV *> &pixels, unsigned int startTime, unsigned int endTime) {
+  void InitAnimation(const std::vector<HSV *> &pixels, const JsonObject &animationAsJsonObj) {
     this->pixels = pixels;
-    this->start_time = startTime;
-    this->end_time = endTime;
+    this->start_time = animationAsJsonObj["s"];
+    this->end_time = animationAsJsonObj["e"];
+    this->repeatNum = animationAsJsonObj["rep_num"]; // will be 0.0f if missing
+    this->repeatStart = animationAsJsonObj["rep_s"]; // will be 0.0f if missing
+    this->repeatEnd = animationAsJsonObj["rep_e"]; // will be 0.0f if missing
   }
 
   bool IsActive(unsigned long curr_time) {
@@ -35,6 +44,7 @@ public:
 
 protected:
   unsigned long start_time, end_time;
+  float repeatNum, repeatStart, repeatEnd;
   std::vector<HSV *> pixels;
 };
 

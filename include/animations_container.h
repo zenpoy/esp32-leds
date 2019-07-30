@@ -39,8 +39,8 @@ private:
     const AnimationsList *emptyAnimationsList;
 
     // this animation list is in use by the rendered, and should not be deleted until it is safe
-    AnimationsList *lockedAnimationPtr = nullptr;
-    bool deleteLockedWhenUnused = false;
+    volatile AnimationsList *lockedAnimationPtr = nullptr;
+    volatile bool deleteLockedWhenUnused = false;
 
     SemaphoreHandle_t mapMutex;
 };

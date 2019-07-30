@@ -37,7 +37,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
 
   if (strncmp("animations/", topic, 11) == 0) {
-    int songNameStartIndex = 11 + strlen(thingname) + 1;
+    int songNameStartIndex = 11 + strlen(THING_NAME) + 1;
     String songName = String(topic + songNameStartIndex);
     fsManager.SaveToFs((String("/music/") + songName).c_str(), payload, length);
     animationsContainer.SetFromJsonFile(songName, doc);
@@ -58,11 +58,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 void connectToWifi() {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
+    WiFi.begin(SSID, WIFI_PASSWORD);
     Serial.print("Thing name: ");
-    Serial.println(thingname);
+    Serial.println(THING_NAME);
     Serial.printf("Attempting to connect to SSID: ");
-    Serial.printf(ssid);
+    Serial.printf(SSID);
     while (WiFi.status() != WL_CONNECTED)
     {
         Serial.print(".");
@@ -74,13 +74,13 @@ void connectToWifi() {
 WiFiClient net;
 PubSubClient client(net);
 void connectToMessageBroker() {
-    client.setServer(mqttHost, 1883);
+    client.setServer(MQTT_HOST, 1883);
     client.setCallback(callback);
-    if(client.connect(thingname)) {
+    if(client.connect(THING_NAME)) {
         Serial.println("connected to message broker");
-        client.subscribe((String("objects-config/") + String(thingname)).c_str(), 1);
+        client.subscribe((String("objects-config/") + String(THING_NAME)).c_str(), 1);
         client.subscribe("current-song", 1);
-        client.subscribe((String("animations/") + String(thingname) + String("/#")).c_str(), 1);
+        client.subscribe((String("animations/") + String(THING_NAME) + String("/#")).c_str(), 1);
     }
     else {
         Serial.print("error state:");
@@ -105,7 +105,7 @@ void MonitorLoop( void * parameter) {
   connectToWifi();
   connectToMessageBroker();
   IPAddress timeServerIP(10, 0, 0, 200);
-  songOffsetTracker.setup(timeServerIP, 123);
+  songOffsetTracker.setup(timeServerIP, TIME_SERVER_PORT);
   for(;;) {
     client.loop();
     songOffsetTracker.loop();
