@@ -102,12 +102,17 @@ void AnimationsContainer::DeleteAnimationsList(AnimationsList *listToDelete)
 
   Serial.print("deleting animations list with ");
   Serial.print(listToDelete->size());
-  Serial.println(" animations");
+  Serial.print(" animations. free heap size before delete: ");
+  Serial.println(esp_get_free_heap_size());
+
   for(AnimationsList::iterator animationIt = listToDelete->begin(); animationIt != listToDelete->end(); animationIt++) {
     IAnimation *animation = *animationIt;
     delete animation;
   }
   delete listToDelete;
+
+  Serial.print("free heap size after delete: ");
+  Serial.println(esp_get_free_heap_size());
 }
 
 void AnimationsContainer::DeleteListIfPossible(AnimationsList *listToDelete)

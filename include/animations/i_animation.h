@@ -29,7 +29,7 @@ public:
     Render(rel_time);
   }
 
-  void InitAnimation(const std::vector<HSV *> &pixels, const JsonObject &animationAsJsonObj) {
+  void InitAnimation(const std::vector<HSV *> *pixels, const JsonObject &animationAsJsonObj) {
     this->pixels = pixels;
     this->start_time = animationAsJsonObj["s"];
     this->end_time = animationAsJsonObj["e"];
@@ -45,7 +45,7 @@ public:
 protected:
   unsigned long start_time, end_time;
   float repeatNum, repeatStart, repeatEnd;
-  std::vector<HSV *> pixels;
+  const std::vector<HSV *> *pixels;
 };
 
 #endif // __I_ANIMATIONS_H__

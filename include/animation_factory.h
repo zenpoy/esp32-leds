@@ -26,7 +26,7 @@ private:
   static const char *InitObjectsMap(HSV ledsArr[], int totalPixels, const JsonObject &objectsMap);
 
 private:
-  typedef std::map<std::string, std::vector<HSV *> > LedObjectMap;
+  typedef std::map<std::string, const std::vector<HSV *> *> LedObjectMap;
   static LedObjectMap object_map;
 
 };

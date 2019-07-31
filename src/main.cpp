@@ -13,7 +13,6 @@
 
 #include "SPIFFS.h"
 
-
 HSV leds_hsv[NUM_LEDS];
 RenderUtils renderUtils(leds_hsv, NUM_LEDS);
 SongOffsetTracker songOffsetTracker;
@@ -145,6 +144,7 @@ CurrentSongDetails songDetails;
 
 void loop() {
 
+  
   renderUtils.Clear();
 
   unsigned long currentMillis = millis();

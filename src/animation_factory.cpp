@@ -60,7 +60,9 @@ const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, con
     if(numIndices == 0)
         return "object in the map has no configured indices (probably error in json format)";
 
-    object_map[key].reserve(numIndices);
+    std::vector<HSV *> *newMappingPtr = new std::vector<HSV *>();
+
+    newMappingPtr->reserve(numIndices);
     for(JsonVariant index : indices) {
 
       if(!index.is<int>())
@@ -72,8 +74,9 @@ const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, con
         return "pixel index out of range";
 
       HSV *pixelPtr = &(ledsArr[pixelIndex]);
-      object_map[key].push_back(pixelPtr);
+      newMappingPtr->push_back(pixelPtr);
     }
+    object_map[key] = newMappingPtr;
   }
 
   return NULL;
@@ -91,13 +94,26 @@ std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &
 
   Serial.print("successfully read animations from file. found ");
   Serial.print(array.size());
-  Serial.println(" animations");
+  Serial.print(" animations. free heap size: ");
+  Serial.println(esp_get_free_heap_size());
 
   return animationsList;
 }
 
+// void printHeap(const char *msg) {
+//   static signed int lastHeap = 0;
+//   int32_t currFreeHeap = esp_get_free_heap_size();
+//   Serial.print(msg);
+//   Serial.print(" free heap size: ");
+//   Serial.print(currFreeHeap);
+//   Serial.print(" diff: ");
+//   Serial.println(lastHeap - currFreeHeap);
+//   lastHeap = currFreeHeap;
+// }
+
 IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj) {
   
+
   IAnimation *generated_animation = NULL;
 
   const char * animation_name = animationAsJsonObj["t"];
@@ -121,12 +137,13 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
   } else if(strcmp(animation_name, "al") == 0) {
     generated_animation = new AlternateColoringAnimation();
   }
-  
 
   if (generated_animation != NULL) {
     generated_animation->InitAnimation(object_map[pixels_name], animationAsJsonObj);
     generated_animation->InitFromJson(animation_params);
   }
+
+
 
   return generated_animation;
 }

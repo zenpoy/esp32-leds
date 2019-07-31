@@ -21,7 +21,7 @@ void AlternateAnimation::Render(float rel_time) {
     double currHueShift = hueShift->GetValue(rel_time);
 
     int i=0;
-    for(std::vector<HSV *>::const_iterator it = pixels.begin(); it != pixels.end(); ++it, i++) {
+    for(std::vector<HSV *>::const_iterator it = pixels->begin(); it != pixels->end(); ++it) {
         bool pixelState = (i % (2 * numberOfPixels)) < numberOfPixels;
         if(currState ^ pixelState) {
             HSV *pixel = *it;
