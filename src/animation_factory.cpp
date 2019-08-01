@@ -8,6 +8,7 @@
 #include <animations/fill.h>
 #include <animations/snake.h>
 #include <animations/alternate_coloring.h>
+#include <animations/confetti.h>
 
 #include <Arduino.h>
 
@@ -136,7 +137,10 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new SnakeAnimation();
   } else if(strcmp(animation_name, "al") == 0) {
     generated_animation = new AlternateColoringAnimation();
-  }
+  } else if(strcmp(animation_name, "confetti") == 0) {
+    generated_animation = new ConfettiAnimation();
+  } 
+  
 
   if (generated_animation != NULL) {
     generated_animation->InitAnimation(object_map[pixels_name], animationAsJsonObj);

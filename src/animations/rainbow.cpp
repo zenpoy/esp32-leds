@@ -24,10 +24,9 @@ void RainbowAnimation::Render(float rel_time) {
   const float curr_end_hue = end_hue->GetValue(rel_time);
   const float curr_hue_diff = curr_end_hue - curr_start_hue;
 
-  int i=0;
   float numberOfPixels = (float)pixels->size();
-  for(std::vector<HSV *>::const_iterator it = pixels->begin(); it != pixels->end(); ++it) {
-    HSV *pixel = *it;
+  for(int i=0; i<pixels->size(); i++) {
+    HSV *pixel = (*pixels)[i];
     float rel_pos = ((float)i / numberOfPixels);
     pixel->hue = curr_start_hue + curr_hue_diff * rel_pos;
     pixel->sat = 1.0f;
