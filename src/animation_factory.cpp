@@ -89,8 +89,26 @@ std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &
 
   std::list<IAnimation *> *animationsList = new std::list<IAnimation *>();
   for(int i=0; i<array.size(); i++) {
-    IAnimation *animationObj = CreateAnimation(array.getElement(i).as<JsonObject>()); 
-    animationsList->push_back(animationObj);
+
+    JsonObject anJsonConfig = array.getElement(i).as<JsonObject>();
+
+    // allow pixels (json shortcut: "p") to be string, or list of string
+    JsonVariant pixels = anJsonConfig["p"];
+    if(pixels.is<const char*>()) {
+      CreateAnimationAndAppend(anJsonConfig, pixels.as<const char *>(), animationsList);
+    }
+
+    else if(pixels.is<JsonArray>()) {
+      JsonArray pixelsArr = pixels.as<JsonArray>();
+      for (auto singlePixelsSegment : pixelsArr) {
+
+        if(!singlePixelsSegment.is<const char*>()) 
+          continue;
+
+        const char *pixelsName = singlePixelsSegment.as<const char *>();
+        CreateAnimationAndAppend(anJsonConfig, pixelsName, animationsList);
+      }
+    }
   }
 
   Serial.print("successfully read animations from file. found ");
@@ -112,13 +130,27 @@ std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &
 //   lastHeap = currFreeHeap;
 // }
 
-IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj) {
+void AnimationFactory::CreateAnimationAndAppend(JsonObject anJsonConfig, const char *pixelsName, std::list<IAnimation *> *listToAppend) 
+{
+  IAnimation *animationObj = CreateAnimation(anJsonConfig, pixelsName);
+  if(animationObj == nullptr) 
+    return;
+
+  listToAppend->push_back(animationObj);
+}
+
+IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj, const char *pixelsName) {
   
+  AnimationFactory::LedObjectMap::iterator pixelsPtrIt = object_map.find(std::string(pixelsName));
+  if(pixelsPtrIt == object_map.end()) {
+    Serial.println("animation ignored - pixels not in mapping");
+    return nullptr;
+  }
+  const std::vector<HSV *> *pixelsVec = pixelsPtrIt->second;
 
   IAnimation *generated_animation = NULL;
 
   const char * animation_name = animationAsJsonObj["t"];
-  const char *pixels_name = animationAsJsonObj["p"];
   JsonObject animation_params = animationAsJsonObj["params"];
 
   if (strcmp(animation_name, "const") == 0) {
@@ -143,7 +175,7 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
   
 
   if (generated_animation != NULL) {
-    generated_animation->InitAnimation(object_map[pixels_name], animationAsJsonObj);
+    generated_animation->InitAnimation(pixelsVec, animationAsJsonObj);
     generated_animation->InitFromJson(animation_params);
   }
 
