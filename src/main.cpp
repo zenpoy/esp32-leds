@@ -105,7 +105,17 @@ void MonitorLoop( void * parameter) {
   connectToMessageBroker();
   IPAddress timeServerIP(10, 0, 0, 200);
   songOffsetTracker.setup(timeServerIP, TIME_SERVER_PORT);
+  unsigned int lastReportTime = millis();
   for(;;) {
+    unsigned int currTime = millis();
+//    Serial.println(currTime - lastReportTime);
+    if(currTime - lastReportTime > 5000) {
+      Serial.print("wifi client connected: ");
+      Serial.println(WiFi.status() == WL_CONNECTED);
+      Serial.print("mqtt client connected: ");
+      Serial.println(client.connected());
+      lastReportTime = currTime;
+    }
     client.loop();
     songOffsetTracker.loop();
   }

@@ -23,7 +23,6 @@ private:
 
 private:
   float *brightPerPixel = nullptr;
-  unsigned int shinedSoFar = 0;
 };
 
 

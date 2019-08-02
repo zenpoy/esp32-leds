@@ -9,6 +9,8 @@
 #include <animations/snake.h>
 #include <animations/alternate_coloring.h>
 #include <animations/confetti.h>
+#include <animations/rand_brightness.h>
+#include <animations/rand_sat.h>
 
 #include <Arduino.h>
 
@@ -171,6 +173,10 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
     generated_animation = new AlternateColoringAnimation();
   } else if(strcmp(animation_name, "confetti") == 0) {
     generated_animation = new ConfettiAnimation();
+  } else if(strcmp(animation_name, "rand_brightness") == 0) {
+    generated_animation = new RandBrightnessAnimation();
+  } else if(strcmp(animation_name, "rand_sat") == 0) {
+    generated_animation = new RandSatAnimation();
   } 
   
 

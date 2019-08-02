@@ -1,5 +1,5 @@
-#ifndef __SET_BROIGHTNESS_H__
-#define __SET_BROIGHTNESS_H__
+#ifndef __SET_BRIGHTNESS_H__
+#define __SET_BRIGHTNESS_H__
 
 #include <animations/i_animation.h>
 #include <float_func/i_float_func.h>
@@ -19,4 +19,4 @@ private:
 };
 
 
-#endif // __SET_BROIGHTNESS_H__
+#endif // __SET_BRIGHTNESS_H__
