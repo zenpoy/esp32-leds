@@ -55,26 +55,41 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 }
 
-void connectToWifi() {
+void ConnectToWifi() {
+
+  if (WiFi.status() == WL_CONNECTED)
+    return;
+
+  while(true) {
+    unsigned int connectStartTime = millis();
+    WiFi.disconnect();
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID, WIFI_PASSWORD);
-    Serial.print("Thing name: ");
-    Serial.println(THING_NAME);
     Serial.printf("Attempting to connect to SSID: ");
     Serial.printf(SSID);
-    while (WiFi.status() != WL_CONNECTED)
+    while (millis() - connectStartTime < 10000)
     {
         Serial.print(".");
         delay(1000);
+        if(WiFi.status() == WL_CONNECTED) {
+          Serial.println("connected to wifi");
+          return;
+        }
     }
-    Serial.println("ok!");
+    Serial.println(" could not connect for 10 seconds. retry");
+  }
 }
 
 WiFiClient net;
 PubSubClient client(net);
-void connectToMessageBroker() {
+void ConnectToMessageBroker() {
+
+    if(client.connected())
+      return;
+
     client.setServer(MQTT_HOST, 1883);
     client.setCallback(callback);
+    Serial.println("connecting to mqtt");
     if(client.connect(THING_NAME)) {
         Serial.println("connected to message broker");
         client.subscribe((String("objects-config/") + String(THING_NAME)).c_str(), 1);
@@ -82,7 +97,7 @@ void connectToMessageBroker() {
         client.subscribe((String("animations/") + String(THING_NAME) + String("/#")).c_str(), 1);
     }
     else {
-        Serial.print("error state:");
+        Serial.print("mqtt connect failed. error state:");
         Serial.println(client.state());
     }
 
@@ -101,15 +116,17 @@ void HandleObjectsConfig(File &f) {
 }
 
 void MonitorLoop( void * parameter) {
-  connectToWifi();
-  connectToMessageBroker();
+  ConnectToWifi();
   IPAddress timeServerIP(10, 0, 0, 200);
   songOffsetTracker.setup(timeServerIP, TIME_SERVER_PORT);
   unsigned int lastReportTime = millis();
   for(;;) {
+    ConnectToWifi();
+    ConnectToMessageBroker();
     unsigned int currTime = millis();
-//    Serial.println(currTime - lastReportTime);
-    if(currTime - lastReportTime > 5000) {
+    if(currTime - lastReportTime >= 5000) {
+      Serial.print("current millis: ");
+      Serial.println(millis());
       Serial.print("wifi client connected: ");
       Serial.println(WiFi.status() == WL_CONNECTED);
       Serial.print("mqtt client connected: ");
@@ -124,6 +141,9 @@ void MonitorLoop( void * parameter) {
 void setup() {
   Serial.begin(115200);
   disableCore0WDT();
+
+  Serial.print("Thing name: ");
+  Serial.println(THING_NAME);
 
   fsManager.setup();
   animationsContainer.setup();
@@ -154,7 +174,6 @@ CurrentSongDetails songDetails;
 
 void loop() {
 
-  
   renderUtils.Clear();
 
   unsigned long currentMillis = millis();
