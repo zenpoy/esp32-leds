@@ -24,11 +24,11 @@ public:
 
   void Render(unsigned long curr_time) {
 
-    float rel_time = ((float)(curr_time - start_time) / (float)(end_time - start_time));  
+    float relTime = ((float)(curr_time - start_time) / (float)(end_time - start_time));
     if(this->repeatNum > 0.0f) { // has repeats - change relTime
 
-      float cycleTime = rel_time * this->repeatNum;
-      rel_time = fmod(cycleTime, 1.0f);
+      float cycleTime = relTime * this->repeatNum;
+      float relTimeInCycle = fmod(cycleTime, 1.0f);
       int currCycleIndex = floor(cycleTime);
 
       if(currCycleIndex != this->lastCycleIndex) {
@@ -37,11 +37,12 @@ public:
       }
 
       // check if a "repeat" function should be rendered for this time
-      if(rel_time < this->repeatStart || rel_time > this->repeatEnd)
+      if(relTimeInCycle < this->repeatStart || relTimeInCycle > this->repeatEnd)
         return;
 
+      relTime = (relTimeInCycle - this->repeatStart) / (this->repeatEnd - this->repeatStart);
     }
-    Render(rel_time);
+    Render(relTime);
   }
 
   void InitAnimation(const std::vector<HSV *> *pixels, const JsonObject &animationAsJsonObj) {
