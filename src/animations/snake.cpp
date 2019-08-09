@@ -25,6 +25,7 @@ void SnakeAnimation::Render(float rel_time) {
     if(headPos == NULL || length == NULL || directionForward == NULL)
         return;
 
+    // currDir true means tails go back (to the lower indices)
     bool currDir = directionForward->GetValue(rel_time);
     bool makeBackwardMirror = true;
     boolean useMirror = (directionForward == false && makeBackwardMirror);
@@ -35,7 +36,7 @@ void SnakeAnimation::Render(float rel_time) {
     float relHeadPos = headPos->GetValue(rel_time);
     float absLength = relLength * pixels->size();
     float absHeadPos = relHeadPos * pixels->size();
-    float absEndPos = (directionForward || makeBackwardMirror) ? (absHeadPos - absLength) : (absHeadPos + absLength);
+    float absEndPos = currDir ? (absHeadPos - absLength) : (absHeadPos + absLength);
 
     CalcAndSetBrightnessPerPixel(currDir, absEndPos, absLength, useMirror);
     // SmoothHeadIndex(currDir, absHeadPos, useMirror);        
@@ -50,9 +51,7 @@ void SnakeAnimation::CalcAndSetBrightnessPerPixel(bool currDir, float absEndArr,
             relPositionInSnake = 0.0;
         }
 
-        // calculate mirror if needed and apply the brightness on the spike
-        int indexToApply = useMirror ? pixels->size() - 1 - i : i;
-        (*pixels)[indexToApply]->val *= relPositionInSnake;
+        (*(pixels + i))->val *= relPositionInSnake;
     }
 }
 

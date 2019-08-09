@@ -10,13 +10,15 @@ public:
 
     void InitFromJson(const JsonObject &animation_params)
     {
-
+        valueToReturn = animation_params["v"];
     }
 
     bool GetValue(float relTime)
     {
-        return true;
+        return valueToReturn;
     }
+
+    bool valueToReturn;
 };
 
 #endif // __CONST_BOOLEAN_FUNC_H__
