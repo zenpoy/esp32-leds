@@ -27,22 +27,18 @@ void SnakeAnimation::Render(float rel_time) {
 
     // currDir true means tails go back (to the lower indices)
     bool currDir = directionForward->GetValue(rel_time);
-    bool makeBackwardMirror = true;
-    boolean useMirror = (directionForward == false && makeBackwardMirror);
-    if(useMirror) {
-        currDir = true;
-    }
     float relLength = length->GetValue(rel_time);
     float relHeadPos = headPos->GetValue(rel_time);
     float absLength = relLength * pixels->size();
     float absHeadPos = relHeadPos * pixels->size();
     float absEndPos = currDir ? (absHeadPos - absLength) : (absHeadPos + absLength);
 
-    CalcAndSetBrightnessPerPixel(currDir, absEndPos, absLength, useMirror);
+    CalcAndSetBrightnessPerPixel(currDir, absEndPos, absLength);
     // SmoothHeadIndex(currDir, absHeadPos, useMirror);        
 }
 
-void SnakeAnimation::CalcAndSetBrightnessPerPixel(bool currDir, float absEndArr, float absLength, bool useMirror) {
+void SnakeAnimation::CalcAndSetBrightnessPerPixel(bool currDir, float absEndArr, float absLength) {
+
     for(int i=0; i<pixels->size(); i++) {
         // calculate the brightness at the current index
         float distanceFromEnd = currDir ? (i - absEndArr) : (absEndArr - i);
@@ -51,14 +47,14 @@ void SnakeAnimation::CalcAndSetBrightnessPerPixel(bool currDir, float absEndArr,
             relPositionInSnake = 0.0;
         }
 
-        (*(pixels + i))->val *= relPositionInSnake;
+        ((*pixels)[i])->val *= relPositionInSnake;
     }
 }
 
-int SnakeAnimation::GetSmoothIndex(bool currDir, float absHeadPos, bool useMirror) {
+int SnakeAnimation::GetSmoothIndex(bool currDir, float absHeadPos) {
     if(currDir) {
         int firstIndex = (int)floor(absHeadPos);
-        return useMirror ? (pixels->size() - (firstIndex + 1)) : (firstIndex + 1);
+        return firstIndex + 1;
     }
     else {
         int firstIndex = (int)ceil(absHeadPos);
@@ -66,21 +62,21 @@ int SnakeAnimation::GetSmoothIndex(bool currDir, float absHeadPos, bool useMirro
     }
 }
 
-void SnakeAnimation::SmoothHeadIndex(bool currDir, float absHeadPos, bool useMirror) {
-    if(currDir) {
-        int firstIndex = (int)floor(absHeadPos);
-        float nextIndexAmount = fmod(absHeadPos, 1.0); // if the snake head covers a lot of the next index, this number will be high
-        int indexToSmooth = useMirror ? (pixels->size() - (firstIndex + 1)) : (firstIndex + 1);
-        if (indexToSmooth >= 0 && indexToSmooth < pixels->size()) {
-            (*pixels)[indexToSmooth]->val *= nextIndexAmount;
-        }
-    }
-    else {
-        int firstIndex = (int)ceil(absHeadPos);
-        double nextIndexAmount = 1.0 - fmod(absHeadPos, 1.0); // if the snake head covers a lot of the next index, this number will be high
-        int indexToSmooth = (firstIndex - 1);
-        if (indexToSmooth >= 0 && indexToSmooth < pixels->size()) {
-            (*pixels)[indexToSmooth]->val *= nextIndexAmount;
-        }
-    }
+void SnakeAnimation::SmoothHeadIndex(bool currDir, float absHeadPos) {
+    // if(currDir) {
+    //     int firstIndex = (int)floor(absHeadPos);
+    //     float nextIndexAmount = fmod(absHeadPos, 1.0); // if the snake head covers a lot of the next index, this number will be high
+    //     int indexToSmooth = useMirror ? (pixels->size() - (firstIndex + 1)) : (firstIndex + 1);
+    //     if (indexToSmooth >= 0 && indexToSmooth < pixels->size()) {
+    //         (*pixels)[indexToSmooth]->val *= nextIndexAmount;
+    //     }
+    // }
+    // else {
+    //     int firstIndex = (int)ceil(absHeadPos);
+    //     double nextIndexAmount = 1.0 - fmod(absHeadPos, 1.0); // if the snake head covers a lot of the next index, this number will be high
+    //     int indexToSmooth = (firstIndex - 1);
+    //     if (indexToSmooth >= 0 && indexToSmooth < pixels->size()) {
+    //         (*pixels)[indexToSmooth]->val *= nextIndexAmount;
+    //     }
+    // }
 }

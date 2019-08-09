@@ -15,9 +15,9 @@ public:
   void Render(float rel_time);
 
 private:
-    int GetSmoothIndex(bool currDir, float absHeadPos, bool useMirror);
-    void CalcAndSetBrightnessPerPixel(bool directionForward, float absEndArr, float absLength, bool useMirror);
-    void SmoothHeadIndex(bool currDir, float absHeadPos, bool useMirror);
+    int GetSmoothIndex(bool currDir, float absHeadPos);
+    void CalcAndSetBrightnessPerPixel(bool directionForward, float absEndArr, float absLength);
+    void SmoothHeadIndex(bool currDir, float absHeadPos);
 
 private:
     IFloatFunc *headPos = NULL;
