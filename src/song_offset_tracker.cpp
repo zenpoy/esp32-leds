@@ -4,11 +4,6 @@
 #include <ArduinoJson.h>
 #include <Arduino.h>
 
-SongOffsetTracker::SongOffsetTracker() : songDataMutex(xSemaphoreCreateMutex())
-{
-
-}
-
 void SongOffsetTracker::setup(const IPAddress &timeServerIP, uint16_t timeServerPort) {
     timesync.setup(timeServerIP, 123);
 }
@@ -23,29 +18,25 @@ bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
 
     bool currSongChanged = false;
 
-    xSemaphoreTake(songDataMutex, portMAX_DELAY);
-    {
-        bool wasSongPlaying = isSongPlaying;
-        isSongPlaying = doc["song_is_playing"];
-        if(isSongPlaying) {
-            // saving this value as int64 for easier calculations later
-            songStartTimeEpoch = doc["start_time_millis_since_epoch"];
-            const char *fileIdPtr = doc["file_id"];
-            currSongChanged = strcmp(fileIdPtr, fileNameFromPlayer.c_str()) != 0;
-            fileNameFromPlayer = fileIdPtr;
+    bool wasSongPlaying = isSongPlaying;
+    isSongPlaying = doc["song_is_playing"];
+    if(isSongPlaying) {
+        // saving this value as int64 for easier calculations later
+        songStartTimeEpoch = doc["start_time_millis_since_epoch"];
+        const char *fileIdPtr = doc["file_id"];
+        currSongChanged = strcmp(fileIdPtr, fileNameFromPlayer.c_str()) != 0;
+        fileNameFromPlayer = fileIdPtr;
 
-            fileName = fileNameFromPlayer;
-            int dotIndex = fileName.indexOf('.');
-            if(dotIndex >= 0) {
-                fileName.remove(dotIndex);
-            }
-        }
-        else  {
-            fileName = "";
-            currSongChanged = (wasSongPlaying != isSongPlaying);
+        fileName = fileNameFromPlayer;
+        int dotIndex = fileName.indexOf('.');
+        if(dotIndex >= 0) {
+            fileName.remove(dotIndex);
         }
     }
-    xSemaphoreGive(songDataMutex);
+    else  {
+        fileName = "";
+        currSongChanged = (wasSongPlaying != isSongPlaying);
+    }
 
     return currSongChanged;
 }
@@ -84,28 +75,3 @@ int32_t SongOffsetTracker::GetSongStartTime() {
     return songStartTime;
 }
 
-bool SongOffsetTracker::GetCurrentSongDetails(unsigned long currentEspMillis, CurrentSongDetails *outSongDetails) {
-
-    outSongDetails->valid = false;
-
-    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-    portENTER_CRITICAL(&mux);
-    if(!timesync.m_isTimeValid) {
-        portEXIT_CRITICAL(&mux);
-        return false;
-    }
-
-    xSemaphoreTake(songDataMutex, portMAX_DELAY); 
-    {
-        // when esp's millis() function returned this time (songStartTime), the song started
-        int32_t songStartTime = (int32_t)(songStartTimeEpoch - timesync.m_espStartTimeMs);
-        portEXIT_CRITICAL(&mux);
-
-        outSongDetails->valid = true;
-        outSongDetails->offsetMs = currentEspMillis - songStartTime;
-        outSongDetails->songName = fileName;
-    }
-    xSemaphoreGive(songDataMutex);
-
-    return true;
-}

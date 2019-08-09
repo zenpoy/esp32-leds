@@ -31,6 +31,25 @@ const int anListQueueSize = 5;
 
 StaticJsonDocument<32768> doc;
 
+void SendAnListUpdate()
+{
+    NewSoneMsg msg;
+    if(songOffsetTracker.IsSongPlaying()) {
+      String currFileName = songOffsetTracker.GetCurrentFile();
+      Serial.print("currFileName: ");
+      Serial.println(currFileName);
+      msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
+      msg.songStartTime = songOffsetTracker.GetSongStartTime();
+    }
+    else {
+      Serial.println("no song is playing");
+      msg.anList = nullptr;
+      msg.songStartTime = 0;
+    }
+
+    xQueueSend(anListQueue, &msg, portMAX_DELAY);
+}
+
 void callback(char* topic, byte* payload, unsigned int length) {
 
   Serial.print("Message arrived, ");
@@ -47,26 +66,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
     int songNameStartIndex = 11 + strlen(THING_NAME) + 1;
     String songName = String(topic + songNameStartIndex);
     fsManager.SaveToFs((String("/music/") + songName).c_str(), payload, length);
-    animationsContainer.SetFromJsonFile(songName, doc);
+
+    if(songOffsetTracker.GetCurrentFile() == songName) {
+      SendAnListUpdate();
+    }
     
   } else if(strcmp("current-song", topic) == 0) {
-
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
-    NewSoneMsg msg;
-    if(songOffsetTracker.IsSongPlaying()) {
-      String currFileName = songOffsetTracker.GetCurrentFile();
-      Serial.print("currFileName: ");
-      Serial.println(currFileName);
-      msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
-      msg.songStartTime = songOffsetTracker.GetSongStartTime();
-    }
-    else {
-      Serial.println("no song is playing");
-      msg.anList = nullptr;
-      msg.songStartTime = 0;
-    }
-
-    xQueueSend(anListQueue, &msg, portMAX_DELAY);
+    SendAnListUpdate();
 
   } else if(strncmp("objects-config", topic, 14) == 0) {
     fsManager.SaveToFs("/objects-config", payload, length);
