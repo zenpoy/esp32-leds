@@ -19,9 +19,11 @@ class SongOffsetTracker
     public:
         
         bool HandleCurrentSongMessage(char *data);
-        const String &GetCurrentFile() const { return fileName; }
+        const String GetCurrentFile() const { return fileName; }
+        bool IsSongPlaying() { return isSongPlaying; }
 
     public:
+        int32_t GetSongStartTime();
         bool GetCurrentSongDetails(unsigned long currentEspMillis, CurrentSongDetails *outSongDetails);
 
     private:

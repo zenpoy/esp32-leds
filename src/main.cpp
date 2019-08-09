@@ -21,6 +21,14 @@ FsManager fsManager;
 
 TaskHandle_t Task1;
 
+struct NewSoneMsg {
+  const AnimationsContainer::AnimationsList *anList;
+  int32_t songStartTime;
+};
+QueueHandle_t anListQueue;
+const int anListQueueSize = 5;
+
+
 StaticJsonDocument<32768> doc;
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -42,12 +50,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
     animationsContainer.SetFromJsonFile(songName, doc);
     
   } else if(strcmp("current-song", topic) == 0) {
-    bool fileChanged = songOffsetTracker.HandleCurrentSongMessage((char *)payload);
-    if(fileChanged) {
-      Serial.println("current song changed, loading animations");
-      animationsContainer.SetFromJsonFile(songOffsetTracker.GetCurrentFile(), doc);
+
+    songOffsetTracker.HandleCurrentSongMessage((char *)payload);
+    NewSoneMsg msg;
+    if(songOffsetTracker.IsSongPlaying()) {
+      String currFileName = songOffsetTracker.GetCurrentFile();
+      Serial.print("currFileName: ");
+      Serial.println(currFileName);
+      msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
+      msg.songStartTime = songOffsetTracker.GetSongStartTime();
     }
-    
+    else {
+      Serial.println("no song is playing");
+      msg.anList = nullptr;
+      msg.songStartTime = 0;
+    }
+
+    xQueueSend(anListQueue, &msg, portMAX_DELAY);
+
   } else if(strncmp("objects-config", topic, 14) == 0) {
     fsManager.SaveToFs("/objects-config", payload, length);
     ESP.restart();
@@ -138,15 +158,21 @@ void MonitorLoop( void * parameter) {
   }
 }
 
+NewSoneMsg msg;
+
 void setup() {
   Serial.begin(115200);
   disableCore0WDT();
+
+  msg.anList = nullptr;
+  msg.songStartTime = 0;
+
+  anListQueue = xQueueCreate( anListQueueSize, sizeof(NewSoneMsg) );
 
   Serial.print("Thing name: ");
   Serial.println(THING_NAME);
 
   fsManager.setup();
-  animationsContainer.setup();
   renderUtils.Setup();
 
   File file = SPIFFS.open("/objects-config");
@@ -174,15 +200,32 @@ CurrentSongDetails songDetails;
 
 void loop() {
 
+  NewSoneMsg newMsg;
+  if(xQueueReceive(anListQueue, &newMsg, 0) == pdTRUE) {
+    Serial.println("received message on queue");
+    Serial.print("songStartTime: ");
+    Serial.println(newMsg.songStartTime);
+    Serial.print("an list valid: ");
+    Serial.println(newMsg.anList != nullptr);
+
+    if(msg.anList != nullptr) {
+      Serial.println("deleteing old animations list");
+      delete msg.anList;
+    }
+    msg = newMsg;
+  }
+
   renderUtils.Clear();
 
   unsigned long currentMillis = millis();
-  bool hasValidSong = songOffsetTracker.GetCurrentSongDetails(currentMillis, &songDetails);
-  if(hasValidSong && songDetails.offsetMs >= 0) {
-    unsigned long songOffset = (unsigned long)songDetails.offsetMs;
-    const AnimationsContainer::AnimationsList *currList = animationsContainer.GetAnimationsList(songDetails.songName, songOffset);
+  bool hasValidSong = msg.anList != nullptr;
+  if(hasValidSong) {
+    int32_t songOffset = ((int32_t)(millis())) - msg.songStartTime;
+    const AnimationsContainer::AnimationsList *currList = msg.anList;
     // Serial.print("number of animations: ");
     // Serial.println(currList->size());
+    // Serial.print("song offset: ");
+    // Serial.println(songOffset);
     for(AnimationsContainer::AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++) {
       IAnimation *animation = *it;
       if(animation != nullptr && animation->IsActive(songOffset)) {

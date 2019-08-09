@@ -3,77 +3,21 @@
 #include <SPIFFS.h>
 #include <animation_factory.h>
 
-AnimationsContainer::AnimationsContainer() {
-  emptyAnimationsList = new AnimationsList();
-  mapMutex = xSemaphoreCreateMutex();
-}
-
-void AnimationsContainer::setup() {
-
-}
-
-void AnimationsContainer::SetFromJsonFile(const String &songName, JsonDocument &docForParsing) {
+const AnimationsContainer::AnimationsList *AnimationsContainer::SetFromJsonFile(const String &songName, JsonDocument &docForParsing) {
 
   bool success = InitJsonDocFromFile(songName, docForParsing);
   if(!success) {
-    return;
+    return nullptr;
   }
-  std::list<IAnimation *> *animationsListPtr = AnimationFactory::AnimationsListFromJson(docForParsing);
-  if(animationsListPtr == NULL) {
-    return;
-  }
-
-  UpdateWithNewAnimationsList(songName, animationsListPtr);
-}
-
-const AnimationsContainer::AnimationsList *AnimationsContainer::GetAnimationsList(const String &songName, unsigned int currentSongOffsetMs) 
-{
-
-  xSemaphoreTake(mapMutex, portMAX_DELAY);
-
-  if(deleteLockedWhenUnused) {
-    DeleteAnimationsList((AnimationsContainer::AnimationsList *)lockedAnimationPtr);
-  }
-  lockedAnimationPtr = nullptr;
-  deleteLockedWhenUnused = false;
-
-  std::map<String, AnimationsList *>::iterator it = availibleAnimations.find(songName);
-  if(it == availibleAnimations.end())
-  {
-    xSemaphoreGive(mapMutex);
-    return emptyAnimationsList;
-  }
-  
-  // lock this animations list so it will not be deleted from other core
-  lockedAnimationPtr = it->second;
-
-  xSemaphoreGive(mapMutex);
-  return (const AnimationsContainer::AnimationsList *)lockedAnimationPtr;
-}
-
-void AnimationsContainer::UpdateWithNewAnimationsList(const String &songName, std::list<IAnimation *> *animationsListPtr)
-{
-  xSemaphoreTake(mapMutex, portMAX_DELAY);
-  UpdateWithNewAnimationsListLocked(songName, animationsListPtr);
-  xSemaphoreGive(mapMutex);
-}
-
-void AnimationsContainer::UpdateWithNewAnimationsListLocked(const String &songName, std::list<IAnimation *> *animationsListPtr)
-{
-  std::map<String, AnimationsList *>::iterator it = availibleAnimations.find(songName);
-  if(it == availibleAnimations.end()) 
-  {
-    availibleAnimations.insert(std::make_pair(songName, animationsListPtr));
-  }
-  else {
-    DeleteListIfPossible(it->second);
-    it->second = animationsListPtr;
-  }
+  return AnimationFactory::AnimationsListFromJson(docForParsing);
 }
 
 bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing) 
 {
-  File file = SPIFFS.open((String("/music/") + songName).c_str());
+  String fileName = String("/music/") + songName;
+  Serial.print("about to read file from FS: ");
+  Serial.println(fileName);
+  File file = SPIFFS.open(fileName.c_str());
   if(!file) {
     Serial.print("could not find file in FS: ");
     Serial.println(songName);
@@ -94,34 +38,3 @@ bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocume
 
   return true;
 }
-
-void AnimationsContainer::DeleteAnimationsList(AnimationsList *listToDelete)
-{
-  if(listToDelete == nullptr)
-    return;
-
-  Serial.print("deleting animations list with ");
-  Serial.print(listToDelete->size());
-  Serial.print(" animations. free heap size before delete: ");
-  Serial.println(esp_get_free_heap_size());
-
-  for(AnimationsList::iterator animationIt = listToDelete->begin(); animationIt != listToDelete->end(); animationIt++) {
-    IAnimation *animation = *animationIt;
-    delete animation;
-  }
-  delete listToDelete;
-
-  Serial.print("free heap size after delete: ");
-  Serial.println(esp_get_free_heap_size());
-}
-
-void AnimationsContainer::DeleteListIfPossible(AnimationsList *listToDelete)
-{
-  if(listToDelete == lockedAnimationPtr) {
-    deleteLockedWhenUnused = true;
-  }
-  else {
-    DeleteAnimationsList(listToDelete);
-  }
-}
-
