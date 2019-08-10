@@ -1,3 +1,5 @@
+#define CONFIG_USE_ONLY_LWIP_SELECT 1
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <secrets.h>
@@ -28,6 +30,9 @@ struct NewSoneMsg {
 QueueHandle_t anListQueue;
 const int anListQueueSize = 5;
 
+QueueHandle_t deleteAnListQueue;
+const int deleteAnListQueueSize = 5;
+
 
 StaticJsonDocument<32768> doc;
 
@@ -36,7 +41,7 @@ void SendAnListUpdate()
     NewSoneMsg msg;
     if(songOffsetTracker.IsSongPlaying()) {
       String currFileName = songOffsetTracker.GetCurrentFile();
-      Serial.print("currFileName: ");
+      Serial.print("[0] currFileName: ");
       Serial.println(currFileName);
       msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
       msg.songStartTime = songOffsetTracker.GetSongStartTime();
@@ -47,7 +52,9 @@ void SendAnListUpdate()
       msg.songStartTime = 0;
     }
 
+    Serial.println("before queue send");
     xQueueSend(anListQueue, &msg, portMAX_DELAY);
+    Serial.println("after queue send");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -80,6 +87,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     ESP.restart();
   }
 
+  Serial.print("[0] done handling mqtt callback: ");
+  Serial.println(topic);
 }
 
 void ConnectToWifi() {
@@ -142,26 +151,38 @@ void HandleObjectsConfig(File &f) {
   }
 }
 
+void DeleteAnListPtr() {
+  const AnimationsContainer::AnimationsList *ptrToDelete;
+  if(xQueueReceive(deleteAnListQueue, &ptrToDelete, 0) == pdTRUE) {
+    Serial.println("[0] deleteing animations list on core 0");
+    delete ptrToDelete;
+    Serial.println("[0] DONE deleteing animations list on core 0");
+  }
+}
+
 void MonitorLoop( void * parameter) {
   ConnectToWifi();
   IPAddress timeServerIP(10, 0, 0, 200);
   songOffsetTracker.setup(timeServerIP, TIME_SERVER_PORT);
   unsigned int lastReportTime = millis();
   for(;;) {
+    DeleteAnListPtr();
     ConnectToWifi();
     ConnectToMessageBroker();
     unsigned int currTime = millis();
     if(currTime - lastReportTime >= 5000) {
-      Serial.print("current millis: ");
+      Serial.print("[0] current millis: ");
       Serial.println(millis());
-      Serial.print("wifi client connected: ");
+      Serial.print("[0] wifi client connected: ");
       Serial.println(WiFi.status() == WL_CONNECTED);
-      Serial.print("mqtt client connected: ");
+      Serial.print("[0] mqtt client connected: ");
       Serial.println(client.connected());
       lastReportTime = currTime;
     }
     client.loop();
     songOffsetTracker.loop();
+
+    vTaskDelay(5);
   }
 }
 
@@ -175,6 +196,7 @@ void setup() {
   msg.songStartTime = 0;
 
   anListQueue = xQueueCreate( anListQueueSize, sizeof(NewSoneMsg) );
+  deleteAnListQueue = xQueueCreate( deleteAnListQueueSize, sizeof(const AnimationsContainer::AnimationsList *) );
 
   Serial.print("Thing name: ");
   Serial.println(THING_NAME);
@@ -194,7 +216,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       MonitorLoop, /* Function to implement the task */
       "MonitorTask", /* Name of the task */
-      4096,  /* Stack size in words */
+      16384,  /* Stack size in words */
       NULL,  /* Task input parameter */
       0,  /* Priority of the task */
       &Task1,  /* Task handle. */
@@ -205,19 +227,26 @@ void setup() {
 // we keep this object once so we don't need to create the string on every loop
 CurrentSongDetails songDetails;
 
+unsigned int lastPrint1Time = millis();
+
 void loop() {
+
+  if(millis() - lastPrint1Time >= 5000) {
+    Serial.println("[1] core 1 alive");
+    lastPrint1Time = millis();
+  }
 
   NewSoneMsg newMsg;
   if(xQueueReceive(anListQueue, &newMsg, 0) == pdTRUE) {
-    Serial.println("received message on queue");
-    Serial.print("songStartTime: ");
+    Serial.println("[1] received message on queue");
+    Serial.print("[1] songStartTime: ");
     Serial.println(newMsg.songStartTime);
-    Serial.print("an list valid: ");
+    Serial.print("[1] an list valid: ");
     Serial.println(newMsg.anList != nullptr);
 
     if(msg.anList != nullptr) {
-      Serial.println("deleteing old animations list");
-      delete msg.anList;
+      Serial.println("sending animation ptr for deleteing to core 0");
+      xQueueSend(deleteAnListQueue, msg.anList, portMAX_DELAY);
     }
     msg = newMsg;
   }
@@ -243,5 +272,8 @@ void loop() {
   unsigned long renderLoopTime = millis() - currentMillis;
   // Serial.print("loop time ms: ");
   // Serial.println(renderLoopTime);
+
   renderUtils.Show();
+
+  vTaskDelay(5);
 }
