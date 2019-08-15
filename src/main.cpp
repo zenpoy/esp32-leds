@@ -34,7 +34,7 @@ QueueHandle_t deleteAnListQueue;
 const int deleteAnListQueueSize = 5;
 
 
-StaticJsonDocument<32768> doc;
+StaticJsonDocument<40000> doc;
 
 void SendAnListUpdate()
 {
