@@ -23,12 +23,14 @@ FsManager fsManager;
 
 TaskHandle_t Task1;
 
-struct NewSoneMsg {
+struct NewSongMsg {
+  bool onlyUpdateTime;
   const AnimationsContainer::AnimationsList *anList;
   int32_t songStartTime;
 };
 QueueHandle_t anListQueue;
 const int anListQueueSize = 5;
+int32_t lastReportedSongStartTime = 0;
 
 QueueHandle_t deleteAnListQueue;
 const int deleteAnListQueueSize = 5;
@@ -36,25 +38,52 @@ const int deleteAnListQueueSize = 5;
 
 StaticJsonDocument<40000> doc;
 
+void CheckForSongStartTimeChange()
+{
+  if(!songOffsetTracker.IsSongPlaying())
+    return;
+
+  int32_t currStartTime = songOffsetTracker.GetSongStartTime();
+  if(currStartTime == lastReportedSongStartTime)
+    return;
+
+  lastReportedSongStartTime = currStartTime;
+
+  NewSongMsg msg;
+  msg.onlyUpdateTime = true;
+  msg.songStartTime = currStartTime;
+  msg.anList = nullptr;
+  Serial.println("updateing time of current song start");
+  xQueueSend(anListQueue, &msg, portMAX_DELAY);
+}
+
 void SendAnListUpdate()
 {
-    NewSoneMsg msg;
+    NewSongMsg msg;
     if(songOffsetTracker.IsSongPlaying()) {
       String currFileName = songOffsetTracker.GetCurrentFile();
       Serial.print("[0] currFileName: ");
       Serial.println(currFileName);
-      msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
-      msg.songStartTime = songOffsetTracker.GetSongStartTime();
+      lastReportedSongStartTime = songOffsetTracker.GetSongStartTime();
+      msg.songStartTime = lastReportedSongStartTime;
+      msg.onlyUpdateTime = false;
+      if(msg.songStartTime != 0) {
+        msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
+      }
+      else {
+        Serial.println("ignoring an list update since song start time is not valid yet");
+        msg.anList = nullptr;
+      }
     }
     else {
       Serial.println("no song is playing");
+      lastReportedSongStartTime = 0;
       msg.anList = nullptr;
       msg.songStartTime = 0;
+      msg.onlyUpdateTime = false;
     }
 
-    Serial.println("before queue send");
     xQueueSend(anListQueue, &msg, portMAX_DELAY);
-    Serial.println("after queue send");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -169,6 +198,7 @@ void MonitorLoop( void * parameter) {
     DeleteAnListPtr();
     ConnectToWifi();
     ConnectToMessageBroker();
+    CheckForSongStartTimeChange();
     unsigned int currTime = millis();
     if(currTime - lastReportTime >= 5000) {
       Serial.print("[0] current millis: ");
@@ -186,7 +216,7 @@ void MonitorLoop( void * parameter) {
   }
 }
 
-NewSoneMsg msg;
+NewSongMsg msg;
 
 void setup() {
   Serial.begin(115200);
@@ -195,7 +225,7 @@ void setup() {
   msg.anList = nullptr;
   msg.songStartTime = 0;
 
-  anListQueue = xQueueCreate( anListQueueSize, sizeof(NewSoneMsg) );
+  anListQueue = xQueueCreate( anListQueueSize, sizeof(NewSongMsg) );
   deleteAnListQueue = xQueueCreate( deleteAnListQueueSize, sizeof(const AnimationsContainer::AnimationsList *) );
 
   Serial.print("Thing name: ");
@@ -236,19 +266,26 @@ void loop() {
     lastPrint1Time = millis();
   }
 
-  NewSoneMsg newMsg;
+  NewSongMsg newMsg;
   if(xQueueReceive(anListQueue, &newMsg, 0) == pdTRUE) {
     Serial.println("[1] received message on queue");
     Serial.print("[1] songStartTime: ");
     Serial.println(newMsg.songStartTime);
     Serial.print("[1] an list valid: ");
     Serial.println(newMsg.anList != nullptr);
+    Serial.print("[1] only update time: ");
+    Serial.println(newMsg.onlyUpdateTime);
 
-    if(msg.anList != nullptr) {
-      Serial.println("sending animation ptr for deleteing to core 0");
-      xQueueSend(deleteAnListQueue, msg.anList, portMAX_DELAY);
+    if(newMsg.onlyUpdateTime) {
+      msg.songStartTime = newMsg.songStartTime;      
     }
-    msg = newMsg;
+    else {
+      if(msg.anList != nullptr) {
+        Serial.println("sending animation ptr for deleteing to core 0");
+        xQueueSend(deleteAnListQueue, msg.anList, portMAX_DELAY);
+      }
+      msg = newMsg;
+    }
   }
 
   renderUtils.Clear();
