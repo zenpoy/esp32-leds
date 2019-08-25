@@ -217,9 +217,10 @@ void HandleObjectsConfig(File &f) {
 void DeleteAnListPtr() {
   const AnimationsContainer::AnimationsList *ptrToDelete;
   if(xQueueReceive(deleteAnListQueue, &ptrToDelete, 0) == pdTRUE) {
-    Serial.println("[0] deleteing animations list on core 0");
+    for(IAnimation *an: (*ptrToDelete)) {
+      delete an;
+    }
     delete ptrToDelete;
-    Serial.println("[0] DONE deleteing animations list on core 0");
   }
 }
 
