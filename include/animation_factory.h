@@ -10,7 +10,11 @@
 #include <SPIFFS.h>
 
 
-#define MAX_SUPPORTED_PIXELS 1200 
+#ifdef NUM_LEDS
+#define MAX_SUPPORTED_PIXELS NUM_LEDS
+#else
+#define MAX_SUPPORTED_PIXELS 1500
+#endif // NUM_LEDS
 
 class AnimationFactory {
 

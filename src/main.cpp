@@ -10,10 +10,14 @@
 #include <song_offset_tracker.h>
 #include <animations_container.h>
 #include <fs_manager.h>
-#include <num_leds.h>
 #include <animation_factory.h>
 
 #include "SPIFFS.h"
+
+#ifndef NUM_LEDS
+#warning NUM_LEDS not definded. using default value of 300
+#define NUM_LEDS 300
+#endif // NUM_LEDS
 
 const unsigned int WD_TIMEOUT_MS = 2000;
 
