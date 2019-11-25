@@ -19,6 +19,10 @@
 #define NUM_LEDS 300
 #endif // NUM_LEDS
 
+#ifndef MQTT_BROKER_PORT
+#define MQTT_BROKER_PORT 1883
+#endif //MQTT_BROKER_PORT
+
 const unsigned int WD_TIMEOUT_MS = 2000;
 
 HSV leds_hsv[NUM_LEDS];
@@ -190,7 +194,7 @@ void ConnectToMessageBroker() {
     if(client.connected())
       return;
 
-    client.setServer(MQTT_HOST, 1883);
+    client.setServer(MQTT_BROKER_IP, MQTT_BROKER_PORT);
     client.setCallback(callback);
     Serial.println("connecting to mqtt");    
     if(client.connect(THING_NAME)) {
