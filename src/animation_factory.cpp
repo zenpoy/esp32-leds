@@ -142,10 +142,11 @@ void AnimationFactory::CreateAnimationAndAppend(JsonObject anJsonConfig, const c
 }
 
 IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj, const char *pixelsName) {
-  
+
   AnimationFactory::LedObjectMap::iterator pixelsPtrIt = object_map.find(std::string(pixelsName));
   if(pixelsPtrIt == object_map.end()) {
-    Serial.println("animation ignored - pixels not in mapping");
+    Serial.print("animation ignored - pixels not in mapping: ");
+    Serial.println(pixelsName);
     return nullptr;
   }
   const std::vector<HSV *> *pixelsVec = pixelsPtrIt->second;

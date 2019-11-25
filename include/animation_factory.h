@@ -10,7 +10,7 @@
 #include <SPIFFS.h>
 
 
-#define MAX_SUPPORTED_PIXELS 600 
+#define MAX_SUPPORTED_PIXELS 1200 
 
 class AnimationFactory {
 
