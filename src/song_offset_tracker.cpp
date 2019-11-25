@@ -4,8 +4,13 @@
 #include <ArduinoJson.h>
 #include <Arduino.h>
 
-void SongOffsetTracker::setup(const IPAddress &timeServerIP, uint16_t timeServerPort) {
-    timesync.setup(timeServerIP, 123);
+#ifndef TIME_SERVER_PORT
+#define TIME_SERVER_PORT 123
+#endif // TIME_SERVER_PORT
+
+
+void SongOffsetTracker::setup() {
+    timesync.setup(TIME_SERVER_IP, TIME_SERVER_PORT);
 }
 
 void SongOffsetTracker::loop() {

@@ -10,7 +10,7 @@ public:
 
   TimeSync();
 
-  void setup(const IPAddress &ntpServerAddress, uint8_t ntpServerPort);
+  void setup(const char *ntpServerAddress, uint8_t ntpServerPort);
   void loop();
 
 private:

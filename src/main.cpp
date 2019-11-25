@@ -229,9 +229,9 @@ void DeleteAnListPtr() {
 }
 
 void MonitorLoop( void * parameter) {
+
   ConnectToWifi();
-  IPAddress timeServerIP(10, 0, 0, 200);
-  songOffsetTracker.setup(timeServerIP, TIME_SERVER_PORT);
+  songOffsetTracker.setup();
   unsigned int lastReportTime = millis();
   for(;;) {
     DeleteAnListPtr();

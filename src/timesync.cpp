@@ -166,9 +166,10 @@ void TimeSync::onNtpPacketCallback(AsyncUDPPacket &packet)
   updateLimits(m_lastClockUpdateTime);
 }
 
-void TimeSync::setup(const IPAddress &ntpServerAddress, uint8_t ntpServerPort) {
+void TimeSync::setup(const char *ntpServerAddress, uint8_t ntpServerPort) {
 
-  m_address = ntpServerAddress;
+  // TODO: check if succeeded and return error somehow if not
+  m_address.fromString(ntpServerAddress);
   m_ntpServerPort = ntpServerPort;
 
   if(m_udp.connect(m_address, m_ntpServerPort)) {

@@ -12,7 +12,7 @@ struct CurrentSongDetails {
 class SongOffsetTracker
 {
     public:
-        void setup(const IPAddress &timeServerIP, uint16_t timeServerPort);
+        void setup();
         void loop();
 
     public:
