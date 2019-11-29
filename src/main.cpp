@@ -23,6 +23,10 @@
 #define MQTT_BROKER_PORT 1883
 #endif //MQTT_BROKER_PORT
 
+#ifndef MONITOR_TOPIC
+#define MONITOR_TOPIC "monitor"
+#endif // MONITOR_TOPIC
+
 const unsigned int WD_TIMEOUT_MS = 2000;
 
 HSV leds_hsv[NUM_LEDS];
