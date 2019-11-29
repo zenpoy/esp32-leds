@@ -196,8 +196,13 @@ void ConnectToMessageBroker() {
 
     client.setServer(MQTT_BROKER_IP, MQTT_BROKER_PORT);
     client.setCallback(callback);
+    StaticJsonDocument<128> json_doc;
+    json_doc["ThingName"] = THING_NAME;
+    json_doc["Alive"] = false;
+    char lastWillMsg[128];
+    serializeJson(json_doc, lastWillMsg);
     Serial.println("connecting to mqtt");    
-    if(client.connect(THING_NAME)) {
+    if(client.connect(THING_NAME, MONITOR_TOPIC, 1, true, lastWillMsg)) {
         Serial.println("connected to message broker");
         client.subscribe((String("objects-config/") + String(THING_NAME)).c_str(), 1);
         client.subscribe("current-song", 1);
@@ -232,11 +237,21 @@ void DeleteAnListPtr() {
   }
 }
 
+void SendMonitorMsg(char *buffer, size_t bufferSize) {
+
+  StaticJsonDocument<128> json_doc;
+  json_doc["ThingName"] = THING_NAME;
+  json_doc["Alive"] = true;
+  json_doc["WifiSignal"] = WiFi.RSSI();
+  serializeJson(json_doc, buffer, bufferSize);
+}
+
 void MonitorLoop( void * parameter) {
 
   ConnectToWifi();
   songOffsetTracker.setup();
   unsigned int lastReportTime = millis();
+  unsigned int lastMonitorTime = millis();
   for(;;) {
     DeleteAnListPtr();
     ConnectToWifi();
@@ -244,6 +259,12 @@ void MonitorLoop( void * parameter) {
     CheckForSongStartTimeChange();
     unsigned int currTime = millis();
     Core0WDSend(currTime);
+    if (currTime - lastMonitorTime >= 1000) {
+      char monitorMsg[128];
+      SendMonitorMsg(monitorMsg, 128);
+      client.publish(MONITOR_TOPIC, monitorMsg, true);
+      lastMonitorTime = currTime;
+    }
     if(currTime - lastReportTime >= 5000) {
       Serial.print("[0] current millis: ");
       Serial.println(millis());
