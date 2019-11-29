@@ -23,9 +23,10 @@
 #define MQTT_BROKER_PORT 1883
 #endif //MQTT_BROKER_PORT
 
-#ifndef MONITOR_TOPIC
-#define MONITOR_TOPIC "monitor"
-#endif // MONITOR_TOPIC
+#ifndef MONITOR_TOPIC_PREFIX
+#define MONITOR_TOPIC_PREFIX "monitor"
+#endif // MONITOR_TOPIC_PREFIX
+#define MONITOR_TOPIC MONITOR_TOPIC_PREFIX "/" THING_NAME
 
 const unsigned int WD_TIMEOUT_MS = 2000;
 
