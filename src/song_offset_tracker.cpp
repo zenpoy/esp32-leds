@@ -4,13 +4,15 @@
 #include <ArduinoJson.h>
 #include <Arduino.h>
 
-#ifndef TIME_SERVER_PORT
-#define TIME_SERVER_PORT 123
-#endif // TIME_SERVER_PORT
+#ifndef TIME_SYNC_SERVER_PORT
+#define TIME_SYNC_SERVER_PORT 12321
+#endif // TIME_SYNC_SERVER_PORT
 
 
 void SongOffsetTracker::setup() {
-    timesync.setup(TIME_SERVER_IP, TIME_SERVER_PORT);
+    IPAddress timeServerHost;
+    timeServerHost.fromString(TIME_SERVER_IP);
+    timesync.setup(timeServerHost, TIME_SYNC_SERVER_PORT);
 }
 
 void SongOffsetTracker::loop() {
@@ -46,37 +48,12 @@ bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
     return currSongChanged;
 }
 
-// void printInt64(int64_t num) {
-//     char rev[128]; 
-//     char *p = rev+1;
-
-//     if(num < 0) {
-//         Serial.print("-");
-//         num = -num;
-//     }
-
-//     while (num > 0) {
-//         *p++ = '0' + ( num % 10);
-//         num/= 10;
-//     }
-//     p--;
-//     /*Print the number which is now in reverse*/
-//     while (p > rev) {
-//         Serial.print(*p--);
-//     }
-// }
-
 int32_t SongOffsetTracker::GetSongStartTime() {
-    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-    portENTER_CRITICAL(&mux);
-    if(!timesync.m_isTimeValid) {
-        portEXIT_CRITICAL(&mux);
+    if(!timesync.isTimeValid()) {
         return 0;
     }
 
-    // when esp's millis() function returned this time (songStartTime), the song started
-    int32_t songStartTime = (int32_t)(songStartTimeEpoch - timesync.m_espStartTimeMs);
-    portEXIT_CRITICAL(&mux);
+    int32_t songStartTime = (int32_t)(songStartTimeEpoch - timesync.getEspStartTimeMs());
     return songStartTime;
 }
 

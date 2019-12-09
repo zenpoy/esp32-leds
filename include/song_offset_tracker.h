@@ -1,7 +1,7 @@
 #ifndef __SONG_OFFSET_TRACKER_H__
 #define __SONG_OFFSET_TRACKER_H__
 
-#include <timesync.h>
+#include <TimeSync.hpp>
 
 struct CurrentSongDetails {
     bool valid;
