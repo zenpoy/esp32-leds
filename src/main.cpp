@@ -45,6 +45,7 @@ struct NewSongMsg {
 };
 QueueHandle_t anListQueue;
 const int anListQueueSize = 10;
+int32_t lastReportedSongStartTime = 0;
 
 QueueHandle_t deleteAnListQueue;
 const int deleteAnListQueueSize = 10;
@@ -86,6 +87,25 @@ void Core0WdReceive(unsigned int currMillis)
   }
 }
 
+void CheckForSongStartTimeChange()
+{
+  if(!songOffsetTracker.IsSongPlaying())
+    return;
+
+  int32_t currStartTime = songOffsetTracker.GetSongStartTime();
+  if(currStartTime == lastReportedSongStartTime)
+    return;
+
+  lastReportedSongStartTime = currStartTime;
+
+  NewSongMsg msg;
+  msg.onlyUpdateTime = true;
+  msg.songStartTime = currStartTime;
+  msg.anList = nullptr;
+  Serial.println("updateing time of current song start");
+  xQueueSend(anListQueue, &msg, portMAX_DELAY);
+}
+
 void SendAnListUpdate()
 {
     NewSongMsg msg;
@@ -93,7 +113,8 @@ void SendAnListUpdate()
       String currFileName = songOffsetTracker.GetCurrentFile();
       PrintCorePrefix(); Serial.print("currFileName: ");
       Serial.println(currFileName);
-      msg.songStartTime = songOffsetTracker.GetSongStartTime();
+      lastReportedSongStartTime = songOffsetTracker.GetSongStartTime();
+      msg.songStartTime = lastReportedSongStartTime;
       msg.onlyUpdateTime = false;
       if(msg.songStartTime != 0) {
         msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
@@ -105,6 +126,7 @@ void SendAnListUpdate()
     }
     else {
       PrintCorePrefix(); Serial.println("no song is playing");
+      lastReportedSongStartTime = 0;
       msg.anList = nullptr;
       msg.songStartTime = 0;
       msg.onlyUpdateTime = false;
@@ -274,7 +296,7 @@ void MonitorLoop( void * parameter) {
       lastReportTime = currTime;
     }
     client.loop();
-    // songOffsetTracker.loop();
+    songOffsetTracker.loop();
 
     vTaskDelay(5);
   }
