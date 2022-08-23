@@ -296,8 +296,25 @@ void MonitorLoop( void * parameter) {
       lastReportTime = currTime;
     }
     client.loop();
-    songOffsetTracker.loop();
-
+    bool clockChanged, clockFirstValid;
+    songOffsetTracker.loop(&clockChanged, &clockFirstValid);
+    if(clockChanged)
+    {
+      Serial.print("clockChanged ");
+      if(clockFirstValid)
+      {
+        Serial.println("clockFirstValid");
+        Serial.println("SendAnListUpdate ");
+        SendAnListUpdate();
+      }
+      else
+      {
+        Serial.print("else: clockFirstValid=FALSE");
+        Serial.println("SendStartTimeToRenderCore ");
+        SendStartTimeToRenderCore();
+      }
+    }
+    
     vTaskDelay(5);
   }
 }
