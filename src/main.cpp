@@ -411,7 +411,15 @@ void loop() {
   // Serial.print("loop time ms: ");
   // Serial.println(renderLoopTime);
 
-  renderUtils.Show();
+
+  // if 'EN' pressed:
+  const int BOOT_PIN = 0;
+  if (digitalRead(BOOT_PIN)==LOW){
+    renderUtils.ShowTestPattern();
+  }
+  else{
+    renderUtils.Show();
+  }
 
   vTaskDelay(5);
 }
