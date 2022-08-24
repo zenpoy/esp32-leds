@@ -21,6 +21,8 @@ public:
     void Setup();
     void Show();
     void Clear();
+    void ShowTestPattern();
+    
 
 private:
     int m_numberOfLeds = 0;

@@ -17,10 +17,7 @@ void RenderUtils::Show()
 void RenderUtils::Setup()
 {
   m_leds_rgb.Begin();
-  for(int i=0; i<m_numberOfLeds; i++) {
-    m_leds_hsv[i].val = 0.0;
-  }
-
+  Clear();
 }
 
 void RenderUtils::Clear()
@@ -28,4 +25,15 @@ void RenderUtils::Clear()
   for(int i=0; i<m_numberOfLeds; i++) {
     m_leds_hsv[i].val = 0.0;
   }
+}
+
+void RenderUtils::ShowTestPattern()
+{
+  for(int i=0; i<m_numberOfLeds; i++) {
+    float t = ((i*5)+millis() % 1000);
+    t /= 1000;
+    HsbColor neoPixelColor(t, .9, 0.3);
+    m_leds_rgb.SetPixelColor(i, neoPixelColor);
+  }
+  m_leds_rgb.Show();
 }
