@@ -319,14 +319,14 @@ void MonitorLoop( void * parameter) {
   }
 }
 
-NewSongMsg msg;
+NewSongMsg global_msg;
 
 void setup() {
   Serial.begin(115200);
   disableCore0WDT();
 
-  msg.anList = nullptr;
-  msg.songStartTime = 0;
+  global_msg.anList = nullptr;
+  global_msg.songStartTime = 0;
 
   anListQueue = xQueueCreate( anListQueueSize, sizeof(NewSongMsg) );
   deleteAnListQueue = xQueueCreate( deleteAnListQueueSize, sizeof(const AnimationsContainer::AnimationsList *) );
@@ -384,23 +384,23 @@ void loop() {
     Serial.println(newMsg.onlyUpdateTime);
 
     if(newMsg.onlyUpdateTime) {
-      msg.songStartTime = newMsg.songStartTime;      
+      global_msg.songStartTime = newMsg.songStartTime;      
     }
     else {
-      if(msg.anList != nullptr) {
+      if(global_msg.anList != nullptr) {
         Serial.println("sending animation ptr for deleteing to core 0");
-        xQueueSend(deleteAnListQueue, &msg.anList, portMAX_DELAY);
+        xQueueSend(deleteAnListQueue, &global_msg.anList, portMAX_DELAY);
       }
-      msg = newMsg;
+      global_msg = newMsg;
     }
   }
 
   renderUtils.Clear();
 
-  bool hasValidSong = msg.anList != nullptr;
+  bool hasValidSong = global_msg.anList != nullptr;
   if(hasValidSong) {
-    int32_t songOffset = ((int32_t)(currentMillis)) - msg.songStartTime;
-    const AnimationsContainer::AnimationsList *currList = msg.anList;
+    int32_t songOffset = ((int32_t)(currentMillis)) - global_msg.songStartTime;
+    const AnimationsContainer::AnimationsList *currList = global_msg.anList;
     // Serial.print("number of animations: ");
     // Serial.println(currList->size());
     // Serial.print("song offset: ");
