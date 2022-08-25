@@ -3,22 +3,24 @@
 #include <SPIFFS.h>
 #include <animation_factory.h>
 
-const AnimationsContainer::AnimationsList *AnimationsContainer::SetFromJsonFile(const String &songName, JsonDocument &docForParsing) {
-
+const AnimationsContainer::AnimationsList *AnimationsContainer::SetFromJsonFile(const String &songName, JsonDocument &docForParsing)
+{
   bool success = InitJsonDocFromFile(songName, docForParsing);
-  if(!success) {
+  if (!success)
+  {
     return nullptr;
   }
   return AnimationFactory::AnimationsListFromJson(docForParsing);
 }
 
-bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing) 
+bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing)
 {
   String fileName = String("/music/") + songName;
   Serial.print("about to read file from FS: ");
   Serial.println(fileName);
   File file = SPIFFS.open(fileName.c_str());
-  if(!file) {
+  if (!file)
+  {
     Serial.print("could not find file in FS: ");
     Serial.println(songName);
     return false;
@@ -26,7 +28,8 @@ bool AnimationsContainer::InitJsonDocFromFile(const String &songName, JsonDocume
 
   DeserializationError err = deserializeJson(docForParsing, file);
   file.close();
-  if(err) {
+  if (err)
+  {
     Serial.print("error deserializing animations json: ");
     Serial.println(err.c_str());
     return false;

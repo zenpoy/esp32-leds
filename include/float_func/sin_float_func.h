@@ -5,11 +5,12 @@
 
 #include <math.h>
 
-class SinFloatFunc : public IFloatFunc {
+class SinFloatFunc : public IFloatFunc
+{
 
 public:
-
-    void InitFromJson(const JsonObject &func_params) {
+    void InitFromJson(const JsonObject &func_params)
+    {
         min_value = func_params["min"];
         max_value = func_params["max"];
         phase = func_params["phase"];
@@ -18,7 +19,8 @@ public:
         diff_max_to_min = max_value - min_value;
     }
 
-    float GetValue(float x) {
+    float GetValue(float x)
+    {
         float angleRad = (x * repeats + phase) * 2.0 * M_PI;
         float sinResult = sin(angleRad);
         return ((sinResult + 1.0) / 2.0) * diff_max_to_min + min_value;
@@ -30,7 +32,6 @@ private:
     float phase = 0.0;
     float repeats = 1.0;
     float diff_max_to_min = max_value - min_value;
-
 };
 
 #endif // __SIN_FLOAT_FUNC_H__

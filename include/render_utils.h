@@ -6,23 +6,23 @@
 #include <NeoPixelBus.h>
 #include <secrets.h>
 
-#define DATA_PIN    2
+#define DATA_PIN 2
 
-class RenderUtils {
+class RenderUtils
+{
 
 public:
-    RenderUtils(HSV leds_hsv[], int numberOfLeds) : 
-        m_numberOfLeds(numberOfLeds),
-        m_leds_hsv(leds_hsv), 
-        m_leds_rgb(numberOfLeds, DATA_PIN) 
-    {}
+    RenderUtils(HSV leds_hsv[], int numberOfLeds) : m_numberOfLeds(numberOfLeds),
+                                                    m_leds_hsv(leds_hsv),
+                                                    m_leds_rgb(numberOfLeds, DATA_PIN)
+    {
+    }
 
 public:
     void Setup();
     void Show();
     void Clear();
     void ShowTestPattern();
-    
 
 private:
     int m_numberOfLeds = 0;

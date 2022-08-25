@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-class FsManager 
+class FsManager
 {
 
 public:

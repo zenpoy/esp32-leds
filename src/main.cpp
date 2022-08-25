@@ -21,7 +21,7 @@
 
 #ifndef MQTT_BROKER_PORT
 #define MQTT_BROKER_PORT 1883
-#endif //MQTT_BROKER_PORT
+#endif // MQTT_BROKER_PORT
 
 const unsigned int WD_TIMEOUT_MS = 2000;
 
@@ -33,7 +33,8 @@ FsManager fsManager;
 
 TaskHandle_t Task1;
 
-struct NewSongMsg {
+struct NewSongMsg
+{
   bool onlyUpdateTime;
   const AnimationsContainer::AnimationsList *anList;
   int32_t songStartTime;
@@ -50,15 +51,18 @@ const int wdQueueSize = 10;
 
 void PrintCorePrefix()
 {
-  Serial.print("["); Serial.print(xPortGetCoreID()); Serial.print("]: ");
+  Serial.print("[");
+  Serial.print(xPortGetCoreID());
+  Serial.print("]: ");
 }
 
 StaticJsonDocument<40000> doc;
 
-void Core0WDSend(unsigned int currMillis) 
+void Core0WDSend(unsigned int currMillis)
 {
   static unsigned int lastWdSendTime = 0;
-  if(currMillis - lastWdSendTime > WD_TIMEOUT_MS) {
+  if (currMillis - lastWdSendTime > WD_TIMEOUT_MS)
+  {
     Serial.println("[0] send wd msg from core 0 to core 1");
     int unused = 0;
     xQueueSend(wdQueue, &unused, 5);
@@ -66,29 +70,31 @@ void Core0WDSend(unsigned int currMillis)
   }
 }
 
-void Core0WdReceive(unsigned int currMillis) 
+void Core0WdReceive(unsigned int currMillis)
 {
   static unsigned int lastCore0WdReceiveTime = 0;
   int unused;
-  if(xQueueReceive(wdQueue, &unused, 0) == pdTRUE) {
+  if (xQueueReceive(wdQueue, &unused, 0) == pdTRUE)
+  {
     lastCore0WdReceiveTime = currMillis;
   }
 
   unsigned int timeSinceWdReceive = currMillis - lastCore0WdReceiveTime;
   // Serial.print("[0] timeSinceWdReceive: ");
   // Serial.println(timeSinceWdReceive);
-  if(timeSinceWdReceive > (3 * WD_TIMEOUT_MS)) {
+  if (timeSinceWdReceive > (3 * WD_TIMEOUT_MS))
+  {
     ESP.restart();
   }
 }
 
 void CheckForSongStartTimeChange()
 {
-  if(!songOffsetTracker.IsSongPlaying())
+  if (!songOffsetTracker.IsSongPlaying())
     return;
 
   int32_t currStartTime = songOffsetTracker.GetSongStartTime();
-  if(currStartTime == lastReportedSongStartTime)
+  if (currStartTime == lastReportedSongStartTime)
     return;
 
   lastReportedSongStartTime = currStartTime;
@@ -103,72 +109,86 @@ void CheckForSongStartTimeChange()
 
 void SendAnListUpdate()
 {
-    NewSongMsg msg;
-    if(songOffsetTracker.IsSongPlaying()) {
-      String currFileName = songOffsetTracker.GetCurrentFile();
-      PrintCorePrefix(); Serial.print("currFileName: ");
-      Serial.println(currFileName);
-      lastReportedSongStartTime = songOffsetTracker.GetSongStartTime();
-      msg.songStartTime = lastReportedSongStartTime;
-      msg.onlyUpdateTime = false;
-      if(msg.songStartTime != 0) {
-        msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
-      }
-      else {
-        PrintCorePrefix(); Serial.println("ignoring an list update since song start time is not valid yet");
-        msg.anList = nullptr;
-      }
+  NewSongMsg msg;
+  if (songOffsetTracker.IsSongPlaying())
+  {
+    String currFileName = songOffsetTracker.GetCurrentFile();
+    PrintCorePrefix();
+    Serial.print("currFileName: ");
+    Serial.println(currFileName);
+    lastReportedSongStartTime = songOffsetTracker.GetSongStartTime();
+    msg.songStartTime = lastReportedSongStartTime;
+    msg.onlyUpdateTime = false;
+    if (msg.songStartTime != 0)
+    {
+      msg.anList = animationsContainer.SetFromJsonFile(currFileName, doc);
     }
-    else {
-      PrintCorePrefix(); Serial.println("no song is playing");
-      lastReportedSongStartTime = 0;
+    else
+    {
+      PrintCorePrefix();
+      Serial.println("ignoring an list update since song start time is not valid yet");
       msg.anList = nullptr;
-      msg.songStartTime = 0;
-      msg.onlyUpdateTime = false;
     }
+  }
+  else
+  {
+    PrintCorePrefix();
+    Serial.println("no song is playing");
+    lastReportedSongStartTime = 0;
+    msg.anList = nullptr;
+    msg.songStartTime = 0;
+    msg.onlyUpdateTime = false;
+  }
 
-    xQueueSend(anListQueue, &msg, portMAX_DELAY);
+  xQueueSend(anListQueue, &msg, portMAX_DELAY);
 }
 
 void SendStartTimeToRenderCore()
 {
-  if(!songOffsetTracker.IsSongPlaying())
+  if (!songOffsetTracker.IsSongPlaying())
     return;
 
   NewSongMsg msg;
   msg.onlyUpdateTime = true;
   msg.songStartTime = songOffsetTracker.GetSongStartTime();
   msg.anList = nullptr;
-  PrintCorePrefix(); Serial.println("updateing time of current song start");
+  PrintCorePrefix();
+  Serial.println("updateing time of current song start");
   xQueueSend(anListQueue, &msg, portMAX_DELAY);
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char *topic, byte *payload, unsigned int length)
+{
 
   Serial.print("Message arrived, ");
   Serial.print(length);
   Serial.print(" [");
   Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < length; i++)
+  {
     Serial.print((char)payload[i]);
   }
   Serial.println();
 
-  if (strncmp("animations/", topic, 11) == 0) {
+  if (strncmp("animations/", topic, 11) == 0)
+  {
     int songNameStartIndex = 11 + strlen(THING_NAME) + 1;
     String songName = String(topic + songNameStartIndex);
     fsManager.SaveToFs((String("/music/") + songName).c_str(), payload, length);
 
-    if(songOffsetTracker.GetCurrentFile() == songName) {
+    if (songOffsetTracker.GetCurrentFile() == songName)
+    {
       SendAnListUpdate();
     }
-    
-  } else if(strcmp("current-song", topic) == 0) {
+  }
+  else if (strcmp("current-song", topic) == 0)
+  {
     songOffsetTracker.HandleCurrentSongMessage((char *)payload);
     SendAnListUpdate();
-
-  } else if(strncmp("objects-config", topic, 14) == 0) {
+  }
+  else if (strncmp("objects-config", topic, 14) == 0)
+  {
     fsManager.SaveToFs("/objects-config", payload, length);
     ESP.restart();
   }
@@ -177,12 +197,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println(topic);
 }
 
-void ConnectToWifi() {
+void ConnectToWifi()
+{
 
   if (WiFi.status() == WL_CONNECTED)
     return;
 
-  while(true) {
+  while (true)
+  {
     unsigned int connectStartTime = millis();
     WiFi.disconnect();
     WiFi.mode(WIFI_STA);
@@ -191,14 +213,15 @@ void ConnectToWifi() {
     Serial.printf(SSID);
     while (millis() - connectStartTime < 10000)
     {
-        Serial.print(".");
-        Core0WDSend(millis());
-        delay(1000);
-        Core0WDSend(millis());
-        if(WiFi.status() == WL_CONNECTED) {
-          Serial.println("connected to wifi");
-          return;
-        }
+      Serial.print(".");
+      Core0WDSend(millis());
+      delay(1000);
+      Core0WDSend(millis());
+      if (WiFi.status() == WL_CONNECTED)
+      {
+        Serial.println("connected to wifi");
+        return;
+      }
     }
     Serial.println(" could not connect for 10 seconds. retry");
   }
@@ -206,55 +229,65 @@ void ConnectToWifi() {
 
 WiFiClient net;
 PubSubClient client(net);
-void ConnectToMessageBroker() {
+void ConnectToMessageBroker()
+{
 
-    if(client.connected())
-      return;
+  if (client.connected())
+    return;
 
-    client.setServer(MQTT_BROKER_IP, MQTT_BROKER_PORT);
-    client.setCallback(callback);
-    StaticJsonDocument<128> json_doc;
-    json_doc["ThingName"] = THING_NAME;
-    json_doc["Alive"] = false;
-    char lastWillMsg[128];
-    serializeJson(json_doc, lastWillMsg);
-    Serial.println("connecting to mqtt");    
-    if(client.connect(THING_NAME, MONITOR_TOPIC, 1, true, lastWillMsg)) {
-        Serial.println("connected to message broker");
-        client.subscribe((String("objects-config/") + String(THING_NAME)).c_str(), 1);
-        client.subscribe("current-song", 1);
-        client.subscribe((String("animations/") + String(THING_NAME) + String("/#")).c_str(), 1);
-    }
-    else {
-        Serial.print("mqtt connect failed. error state:");
-        Serial.println(client.state());
-    }
-
+  client.setServer(MQTT_BROKER_IP, MQTT_BROKER_PORT);
+  client.setCallback(callback);
+  StaticJsonDocument<128> json_doc;
+  json_doc["ThingName"] = THING_NAME;
+  json_doc["Alive"] = false;
+  char lastWillMsg[128];
+  serializeJson(json_doc, lastWillMsg);
+  Serial.println("connecting to mqtt");
+  if (client.connect(THING_NAME, MONITOR_TOPIC, 1, true, lastWillMsg))
+  {
+    Serial.println("connected to message broker");
+    client.subscribe((String("objects-config/") + String(THING_NAME)).c_str(), 1);
+    client.subscribe("current-song", 1);
+    client.subscribe((String("animations/") + String(THING_NAME) + String("/#")).c_str(), 1);
+  }
+  else
+  {
+    Serial.print("mqtt connect failed. error state:");
+    Serial.println(client.state());
+  }
 }
 
-void HandleObjectsConfig(File &f) {
+void HandleObjectsConfig(File &f)
+{
 
   int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc, f);
-  if(AnimationFactory::objectsMapErrorString == NULL) {
+  if (AnimationFactory::objectsMapErrorString == NULL)
+  {
     Serial.print("total pixels: ");
     Serial.println(totalPixels);
-  } else {
+  }
+  else
+  {
     Serial.print("objects map encountered an error while initializing: ");
     Serial.println(AnimationFactory::objectsMapErrorString);
   }
 }
 
-void DeleteAnListPtr() {
+void DeleteAnListPtr()
+{
   const AnimationsContainer::AnimationsList *ptrToDelete;
-  if(xQueueReceive(deleteAnListQueue, &ptrToDelete, 0) == pdTRUE) {
-    for(IAnimation *an: (*ptrToDelete)) {
+  if (xQueueReceive(deleteAnListQueue, &ptrToDelete, 0) == pdTRUE)
+  {
+    for (IAnimation *an : (*ptrToDelete))
+    {
       delete an;
     }
     delete ptrToDelete;
   }
 }
 
-void SendMonitorMsg(char *buffer, size_t bufferSize) {
+void SendMonitorMsg(char *buffer, size_t bufferSize)
+{
 
   StaticJsonDocument<128> json_doc;
   json_doc["ThingName"] = THING_NAME;
@@ -263,25 +296,29 @@ void SendMonitorMsg(char *buffer, size_t bufferSize) {
   serializeJson(json_doc, buffer, bufferSize);
 }
 
-void MonitorLoop( void * parameter) {
+void MonitorLoop(void *parameter)
+{
 
   ConnectToWifi();
   songOffsetTracker.setup();
   unsigned int lastReportTime = millis();
   unsigned int lastMonitorTime = millis();
-  for(;;) {
+  for (;;)
+  {
     DeleteAnListPtr();
     ConnectToWifi();
     ConnectToMessageBroker();
     unsigned int currTime = millis();
     Core0WDSend(currTime);
-    if (currTime - lastMonitorTime >= 1000) {
+    if (currTime - lastMonitorTime >= 1000)
+    {
       char monitorMsg[128];
       SendMonitorMsg(monitorMsg, 128);
       client.publish(MONITOR_TOPIC, monitorMsg, true);
       lastMonitorTime = currTime;
     }
-    if(currTime - lastReportTime >= 5000) {
+    if (currTime - lastReportTime >= 5000)
+    {
       Serial.print("[0] current millis: ");
       Serial.println(millis());
       Serial.print("[0] wifi client connected: ");
@@ -293,10 +330,10 @@ void MonitorLoop( void * parameter) {
     client.loop();
     bool clockChanged, clockFirstValid;
     songOffsetTracker.loop(&clockChanged, &clockFirstValid);
-    if(clockChanged)
+    if (clockChanged)
     {
       Serial.print("clockChanged ");
-      if(clockFirstValid)
+      if (clockFirstValid)
       {
         Serial.println("clockFirstValid");
         Serial.println("SendAnListUpdate ");
@@ -309,23 +346,24 @@ void MonitorLoop( void * parameter) {
         SendStartTimeToRenderCore();
       }
     }
-    
+
     vTaskDelay(5);
   }
 }
 
 NewSongMsg global_msg;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   disableCore0WDT();
 
   global_msg.anList = nullptr;
   global_msg.songStartTime = 0;
 
-  anListQueue = xQueueCreate( anListQueueSize, sizeof(NewSongMsg) );
-  deleteAnListQueue = xQueueCreate( deleteAnListQueueSize, sizeof(const AnimationsContainer::AnimationsList *) );
-  wdQueue = xQueueCreate( wdQueueSize, sizeof(int) );
+  anListQueue = xQueueCreate(anListQueueSize, sizeof(NewSongMsg));
+  deleteAnListQueue = xQueueCreate(deleteAnListQueueSize, sizeof(const AnimationsContainer::AnimationsList *));
+  wdQueue = xQueueCreate(wdQueueSize, sizeof(int));
 
   Serial.print("Thing name: ");
   Serial.println(THING_NAME);
@@ -334,23 +372,24 @@ void setup() {
   renderUtils.Setup();
 
   File file = SPIFFS.open("/objects-config");
-  if(file){
-      HandleObjectsConfig(file);
-      file.close();
+  if (file)
+  {
+    HandleObjectsConfig(file);
+    file.close();
   }
-  else {
-      Serial.println("Failed to open objects config file for reading");
+  else
+  {
+    Serial.println("Failed to open objects config file for reading");
   }
 
   xTaskCreatePinnedToCore(
-      MonitorLoop, /* Function to implement the task */
+      MonitorLoop,   /* Function to implement the task */
       "MonitorTask", /* Name of the task */
-      16384,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      0,  /* Priority of the task */
-      &Task1,  /* Task handle. */
-      0); /* Core where the task should run */
-
+      16384,         /* Stack size in words */
+      NULL,          /* Task input parameter */
+      0,             /* Priority of the task */
+      &Task1,        /* Task handle. */
+      0);            /* Core where the task should run */
 }
 
 // we keep this object once so we don't need to create the string on every loop
@@ -358,18 +397,21 @@ CurrentSongDetails songDetails;
 
 unsigned int lastPrint1Time = millis();
 
-void loop() {
+void loop()
+{
 
   unsigned long currentMillis = millis();
   Core0WdReceive(currentMillis);
 
-  if(currentMillis - lastPrint1Time >= 5000) {
+  if (currentMillis - lastPrint1Time >= 5000)
+  {
     Serial.println("[1] core 1 alive");
     lastPrint1Time = currentMillis;
   }
 
   NewSongMsg newMsg;
-  if(xQueueReceive(anListQueue, &newMsg, 0) == pdTRUE) {
+  if (xQueueReceive(anListQueue, &newMsg, 0) == pdTRUE)
+  {
     Serial.println("[1] received message on queue");
     Serial.print("[1] songStartTime: ");
     Serial.println(newMsg.songStartTime);
@@ -378,11 +420,14 @@ void loop() {
     Serial.print("[1] only update time: ");
     Serial.println(newMsg.onlyUpdateTime);
 
-    if(newMsg.onlyUpdateTime) {
-      global_msg.songStartTime = newMsg.songStartTime;      
+    if (newMsg.onlyUpdateTime)
+    {
+      global_msg.songStartTime = newMsg.songStartTime;
     }
-    else {
-      if(global_msg.anList != nullptr) {
+    else
+    {
+      if (global_msg.anList != nullptr)
+      {
         Serial.println("sending animation ptr for deleteing to core 0");
         xQueueSend(deleteAnListQueue, &global_msg.anList, portMAX_DELAY);
       }
@@ -393,16 +438,19 @@ void loop() {
   renderUtils.Clear();
 
   bool hasValidSong = global_msg.anList != nullptr;
-  if(hasValidSong) {
+  if (hasValidSong)
+  {
     int32_t songOffset = ((int32_t)(currentMillis)) - global_msg.songStartTime;
     const AnimationsContainer::AnimationsList *currList = global_msg.anList;
     // Serial.print("number of animations: ");
     // Serial.println(currList->size());
     // Serial.print("song offset: ");
     // Serial.println(songOffset);
-    for(AnimationsContainer::AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++) {
+    for (AnimationsContainer::AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++)
+    {
       IAnimation *animation = *it;
-      if(animation != nullptr && animation->IsActive(songOffset)) {
+      if (animation != nullptr && animation->IsActive(songOffset))
+      {
         animation->Render((unsigned long)songOffset);
       }
     }
@@ -411,13 +459,14 @@ void loop() {
   // Serial.print("loop time ms: ");
   // Serial.println(renderLoopTime);
 
-
   // if 'EN' pressed:
   const int BOOT_PIN = 0;
-  if (digitalRead(BOOT_PIN)==LOW){
+  if (digitalRead(BOOT_PIN) == LOW)
+  {
     renderUtils.ShowTestPattern();
   }
-  else{
+  else
+  {
     renderUtils.Show();
   }
 

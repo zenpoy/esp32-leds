@@ -4,19 +4,18 @@
 #include <animations/i_animation.h>
 #include <float_func/i_float_func.h>
 
-class HueShiftAnimation : public IAnimation {
+class HueShiftAnimation : public IAnimation
+{
 
 public:
-    ~HueShiftAnimation();
+  ~HueShiftAnimation();
 
 public:
   void InitFromJson(const JsonObject &animation_params);
   void Render(float rel_time, int cycle_index);
 
 private:
-    IFloatFunc *shift_amount = NULL;
-  
+  IFloatFunc *shift_amount = NULL;
 };
-
 
 #endif // __HUE_SHIFT_H__

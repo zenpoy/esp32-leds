@@ -6,9 +6,11 @@
 #include <vector>
 #include <hsv.h>
 
-class IAnimation {
+class IAnimation
+{
 
-public: virtual ~IAnimation() { }
+public:
+  virtual ~IAnimation() {}
 
 public:
   virtual void InitFromJson(const JsonObject &animation_params) = 0;
@@ -21,24 +23,26 @@ protected:
   virtual void NewCycle(int cycleIndex) {}
 
 public:
-
-  void Render(unsigned long curr_time) {
+  void Render(unsigned long curr_time)
+  {
 
     float relTime = ((float)(curr_time - start_time) / (float)(end_time - start_time));
     int currCycleIndex = 0;
-    if(this->repeatNum > 0.0f) { // has repeats - change relTime and calculate cycle index
+    if (this->repeatNum > 0.0f)
+    { // has repeats - change relTime and calculate cycle index
 
       float cycleTime = relTime * this->repeatNum;
       float relTimeInCycle = fmod(cycleTime, 1.0f);
       currCycleIndex = floor(cycleTime);
 
-      if(currCycleIndex != this->lastCycleIndex) {
+      if (currCycleIndex != this->lastCycleIndex)
+      {
         this->lastCycleIndex = currCycleIndex;
         NewCycle(currCycleIndex);
       }
 
       // check if a "repeat" function should be rendered for this time
-      if(relTimeInCycle < this->repeatStart || relTimeInCycle > this->repeatEnd)
+      if (relTimeInCycle < this->repeatStart || relTimeInCycle > this->repeatEnd)
         return;
 
       relTime = (relTimeInCycle - this->repeatStart) / (this->repeatEnd - this->repeatStart);
@@ -46,16 +50,18 @@ public:
     Render(relTime, currCycleIndex);
   }
 
-  void InitAnimation(const std::vector<HSV *> *pixels, const JsonObject &animationAsJsonObj) {
+  void InitAnimation(const std::vector<HSV *> *pixels, const JsonObject &animationAsJsonObj)
+  {
     this->pixels = pixels;
     this->start_time = animationAsJsonObj["s"];
     this->end_time = animationAsJsonObj["e"];
     this->repeatNum = animationAsJsonObj["rep_num"]; // will be 0.0f if missing
     this->repeatStart = animationAsJsonObj["rep_s"]; // will be 0.0f if missing
-    this->repeatEnd = animationAsJsonObj["rep_e"]; // will be 0.0f if missing
+    this->repeatEnd = animationAsJsonObj["rep_e"];   // will be 0.0f if missing
   }
 
-  bool IsActive(unsigned long curr_time) {
+  bool IsActive(unsigned long curr_time)
+  {
     return curr_time >= this->start_time && curr_time < this->end_time;
   }
 

@@ -4,7 +4,8 @@
 #include <animations/i_animation.h>
 #include <float_func/i_float_func.h>
 
-class RandSatAnimation : public IAnimation {
+class RandSatAnimation : public IAnimation
+{
 
 public:
     ~RandSatAnimation();
@@ -19,8 +20,6 @@ private:
 
 private:
     float *satPerPixel = nullptr;
-  
 };
-
 
 #endif // __RAND_SAT_H__

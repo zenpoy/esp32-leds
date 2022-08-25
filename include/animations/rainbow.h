@@ -4,11 +4,11 @@
 #include <animations/i_animation.h>
 #include <float_func/i_float_func.h>
 
-
-class RainbowAnimation : public IAnimation {
+class RainbowAnimation : public IAnimation
+{
 
 public:
-    ~RainbowAnimation();
+  ~RainbowAnimation();
 
 public:
   void InitFromJson(const JsonObject &animation_params);
@@ -18,6 +18,5 @@ private:
   IFloatFunc *start_hue = NULL;
   IFloatFunc *end_hue = NULL;
 };
-
 
 #endif // __RAINBOW_H__

@@ -18,31 +18,37 @@
 AnimationFactory::LedObjectMap AnimationFactory::object_map;
 const char *AnimationFactory::objectsMapErrorString = "no configuration availible - initialized not called";
 
-int AnimationFactory::InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &f) {
+int AnimationFactory::InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &f)
+{
 
   DeserializationError jsonError = deserializeJson(doc, f);
-  if(jsonError) {
+  if (jsonError)
+  {
     objectsMapErrorString = "json deserialize error";
     return 0;
   }
 
   int totalPixels = doc["total_pixels"];
-  if(totalPixels < 0) {
+  if (totalPixels < 0)
+  {
     objectsMapErrorString = "total pixels is negative";
     return 0;
   }
-  if(totalPixels > MAX_SUPPORTED_PIXELS) {
+  if (totalPixels > MAX_SUPPORTED_PIXELS)
+  {
     objectsMapErrorString = "total pixels too large";
     return 0;
   }
-  if(totalPixels == 0) {
+  if (totalPixels == 0)
+  {
     objectsMapErrorString = "total pixels is zero (probably error in json format)";
     return 0;
   }
 
   const JsonObject &objectsMap = doc["objects"];
   const char *objectsMapErr = InitObjectsMap(ledsArr, totalPixels, objectsMap);
-  if(objectsMapErr != NULL) {
+  if (objectsMapErr != NULL)
+  {
     object_map = AnimationFactory::LedObjectMap();
     objectsMapErrorString = objectsMapErr;
     return 0;
@@ -53,28 +59,30 @@ int AnimationFactory::InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &
   return totalPixels;
 }
 
-const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, const JsonObject &objectsMap) 
+const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, const JsonObject &objectsMap)
 {
-  for (JsonPair p : objectsMap) {
+  for (JsonPair p : objectsMap)
+  {
 
-    const char* key = p.key().c_str();
+    const char *key = p.key().c_str();
     JsonArray indices = p.value().as<JsonArray>();
 
     size_t numIndices = indices.size();
-    if(numIndices == 0)
-        return "object in the map has no configured indices (probably error in json format)";
+    if (numIndices == 0)
+      return "object in the map has no configured indices (probably error in json format)";
 
     std::vector<HSV *> *newMappingPtr = new std::vector<HSV *>();
 
     newMappingPtr->reserve(numIndices);
-    for(JsonVariant index : indices) {
+    for (JsonVariant index : indices)
+    {
 
-      if(!index.is<int>())
+      if (!index.is<int>())
         return "pixel index not integer";
       int pixelIndex = index.as<int>();
 
       // check for pixel index out of bounds
-      if(pixelIndex >= totalPixels || pixelIndex < 0)
+      if (pixelIndex >= totalPixels || pixelIndex < 0)
         return "pixel index out of range";
 
       HSV *pixelPtr = &(ledsArr[pixelIndex]);
@@ -86,26 +94,31 @@ const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, con
   return NULL;
 }
 
-std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &doc) {
+std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &doc)
+{
 
   JsonArray array = doc.as<JsonArray>();
 
   std::list<IAnimation *> *animationsList = new std::list<IAnimation *>();
-  for(int i=0; i<array.size(); i++) {
+  for (int i = 0; i < array.size(); i++)
+  {
 
     JsonObject anJsonConfig = array.getElement(i).as<JsonObject>();
 
     // allow pixels (json shortcut: "p") to be string, or list of string
     JsonVariant pixels = anJsonConfig["p"];
-    if(pixels.is<const char*>()) {
+    if (pixels.is<const char *>())
+    {
       CreateAnimationAndAppend(anJsonConfig, pixels.as<const char *>(), animationsList);
     }
 
-    else if(pixels.is<JsonArray>()) {
+    else if (pixels.is<JsonArray>())
+    {
       JsonArray pixelsArr = pixels.as<JsonArray>();
-      for (auto singlePixelsSegment : pixelsArr) {
+      for (auto singlePixelsSegment : pixelsArr)
+      {
 
-        if(!singlePixelsSegment.is<const char*>()) 
+        if (!singlePixelsSegment.is<const char *>())
           continue;
 
         const char *pixelsName = singlePixelsSegment.as<const char *>();
@@ -133,19 +146,21 @@ std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &
 //   lastHeap = currFreeHeap;
 // }
 
-void AnimationFactory::CreateAnimationAndAppend(JsonObject anJsonConfig, const char *pixelsName, std::list<IAnimation *> *listToAppend) 
+void AnimationFactory::CreateAnimationAndAppend(JsonObject anJsonConfig, const char *pixelsName, std::list<IAnimation *> *listToAppend)
 {
   IAnimation *animationObj = CreateAnimation(anJsonConfig, pixelsName);
-  if(animationObj == nullptr) 
+  if (animationObj == nullptr)
     return;
 
   listToAppend->push_back(animationObj);
 }
 
-IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj, const char *pixelsName) {
+IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj, const char *pixelsName)
+{
 
   AnimationFactory::LedObjectMap::iterator pixelsPtrIt = object_map.find(std::string(pixelsName));
-  if(pixelsPtrIt == object_map.end()) {
+  if (pixelsPtrIt == object_map.end())
+  {
     Serial.print("animation ignored - pixels not in mapping: ");
     Serial.println(pixelsName);
     return nullptr;
@@ -154,42 +169,63 @@ IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonO
 
   IAnimation *generated_animation = NULL;
 
-  const char * animation_name = animationAsJsonObj["t"];
+  const char *animation_name = animationAsJsonObj["t"];
   JsonObject animation_params = animationAsJsonObj["params"];
 
-  if (strcmp(animation_name, "const") == 0) {
+  if (strcmp(animation_name, "const") == 0)
+  {
     generated_animation = new ConstColorAnimation();
-  } else if(strcmp(animation_name, "brightness") == 0) {
+  }
+  else if (strcmp(animation_name, "brightness") == 0)
+  {
     generated_animation = new SetBrightnessAnimation();
-  } else if(strcmp(animation_name, "hue_shift") == 0) {
+  }
+  else if (strcmp(animation_name, "hue_shift") == 0)
+  {
     generated_animation = new HueShiftAnimation();
-  } else if(strcmp(animation_name, "rainbow") == 0) {
+  }
+  else if (strcmp(animation_name, "rainbow") == 0)
+  {
     generated_animation = new RainbowAnimation();
-  } else if(strcmp(animation_name, "alternate") == 0) {
+  }
+  else if (strcmp(animation_name, "alternate") == 0)
+  {
     generated_animation = new AlternateAnimation();
-  } else if(strcmp(animation_name, "fill") == 0) {
+  }
+  else if (strcmp(animation_name, "fill") == 0)
+  {
     generated_animation = new FillAnimation();
-  } else if(strcmp(animation_name, "snake") == 0) {
+  }
+  else if (strcmp(animation_name, "snake") == 0)
+  {
     generated_animation = new SnakeAnimation();
-  } else if(strcmp(animation_name, "al") == 0) {
+  }
+  else if (strcmp(animation_name, "al") == 0)
+  {
     generated_animation = new AlternateColoringAnimation();
-  } else if(strcmp(animation_name, "confetti") == 0) {
+  }
+  else if (strcmp(animation_name, "confetti") == 0)
+  {
     generated_animation = new ConfettiAnimation();
-  } else if(strcmp(animation_name, "rand_brightness") == 0) {
+  }
+  else if (strcmp(animation_name, "rand_brightness") == 0)
+  {
     generated_animation = new RandBrightnessAnimation();
-  } else if(strcmp(animation_name, "rand_sat") == 0) {
+  }
+  else if (strcmp(animation_name, "rand_sat") == 0)
+  {
     generated_animation = new RandSatAnimation();
-  } else if(strcmp(animation_name, "hue_shift_c") == 0) {
+  }
+  else if (strcmp(animation_name, "hue_shift_c") == 0)
+  {
     generated_animation = new HueShiftCycleAnimation();
-  } 
-  
+  }
 
-  if (generated_animation != NULL) {
+  if (generated_animation != NULL)
+  {
     generated_animation->InitAnimation(pixelsVec, animationAsJsonObj);
     generated_animation->InitFromJson(animation_params);
   }
-
-
 
   return generated_animation;
 }

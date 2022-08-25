@@ -8,18 +8,20 @@
 #define TIME_SYNC_SERVER_PORT 12321
 #endif // TIME_SYNC_SERVER_PORT
 
-
-void SongOffsetTracker::setup() {
+void SongOffsetTracker::setup()
+{
     IPAddress timeServerHost;
     timeServerHost.fromString(TIME_SERVER_IP);
     timesync.setup(timeServerHost, TIME_SYNC_SERVER_PORT);
 }
 
-void SongOffsetTracker::loop(bool *isClockChanged, bool *clockFirstValid) {
+void SongOffsetTracker::loop(bool *isClockChanged, bool *clockFirstValid)
+{
     timesync.loop(isClockChanged, clockFirstValid);
 }
 
-bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
+bool SongOffsetTracker::HandleCurrentSongMessage(char *data)
+{
     StaticJsonDocument<1024> doc;
     deserializeJson(doc, data);
 
@@ -27,7 +29,8 @@ bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
 
     bool wasSongPlaying = isSongPlaying;
     isSongPlaying = doc["song_is_playing"];
-    if(isSongPlaying) {
+    if (isSongPlaying)
+    {
         // saving this value as int64 for easier calculations later
         songStartTimeEpoch = doc["start_time_millis_since_epoch"];
         const char *fileIdPtr = doc["file_id"];
@@ -36,11 +39,13 @@ bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
 
         fileName = fileNameFromPlayer;
         int dotIndex = fileName.indexOf('.');
-        if(dotIndex >= 0) {
+        if (dotIndex >= 0)
+        {
             fileName.remove(dotIndex);
         }
     }
-    else  {
+    else
+    {
         fileName = "";
         currSongChanged = (wasSongPlaying != isSongPlaying);
     }
@@ -48,12 +53,13 @@ bool SongOffsetTracker::HandleCurrentSongMessage(char *data) {
     return currSongChanged;
 }
 
-int32_t SongOffsetTracker::GetSongStartTime() {
-    if(!timesync.isTimeValid()) {
+int32_t SongOffsetTracker::GetSongStartTime()
+{
+    if (!timesync.isTimeValid())
+    {
         return 0;
     }
 
     int32_t songStartTime = (int32_t)(songStartTimeEpoch - timesync.getEspStartTimeMs());
     return songStartTime;
 }
-

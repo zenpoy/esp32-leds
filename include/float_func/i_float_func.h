@@ -3,7 +3,8 @@
 
 #include <ArduinoJson.h>
 
-class IFloatFunc {
+class IFloatFunc
+{
 
 public:
     virtual ~IFloatFunc() {}
@@ -11,7 +12,6 @@ public:
 public:
     virtual void InitFromJson(const JsonObject &animation_params) = 0;
     virtual float GetValue(float relTime) = 0;
-
 };
 
 IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params);

@@ -4,16 +4,18 @@
 #include "i_discrete_float_func.h"
 #include "math.h"
 
-class StepDiffDiscreteFloatFunc : public IDiscreteFloatFunc {
+class StepDiffDiscreteFloatFunc : public IDiscreteFloatFunc
+{
 
 public:
-
-    void InitFromJson(const JsonObject &func_params, float total) {
+    void InitFromJson(const JsonObject &func_params, float total)
+    {
         this->start = func_params["start"];
         this->dx = func_params["dx"];
     }
 
-    float GetValue(int i) {
+    float GetValue(int i)
+    {
 
         return start + i * dx;
     }

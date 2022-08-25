@@ -3,7 +3,8 @@
 
 #include <ArduinoJson.h>
 
-class IBooleanFunc {
+class IBooleanFunc
+{
 
 public:
     virtual ~IBooleanFunc() {}

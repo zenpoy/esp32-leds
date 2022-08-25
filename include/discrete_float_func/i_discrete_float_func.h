@@ -3,7 +3,8 @@
 
 #include <ArduinoJson.h>
 
-class IDiscreteFloatFunc {
+class IDiscreteFloatFunc
+{
 
 public:
     virtual ~IDiscreteFloatFunc() {}
@@ -11,7 +12,6 @@ public:
 public:
     virtual void InitFromJson(const JsonObject &animation_params, float total) = 0;
     virtual float GetValue(int i) = 0;
-
 };
 
 IDiscreteFloatFunc *DiscreteFloatFuncFactory(const JsonObject &animation_params, float total);

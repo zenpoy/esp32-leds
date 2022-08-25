@@ -6,13 +6,16 @@ RandBrightnessAnimation::~RandBrightnessAnimation()
     brightPerPixel = NULL;
 }
 
-void RandBrightnessAnimation::InitFromJson(const JsonObject &animation_params) {
+void RandBrightnessAnimation::InitFromJson(const JsonObject &animation_params)
+{
     brightPerPixel = new float[pixels->size()];
     RecalculateValues();
 }
 
-void RandBrightnessAnimation::Render(float rel_time, int cycle_index) {
-    for(int i=0; i<pixels->size(); i++) {
+void RandBrightnessAnimation::Render(float rel_time, int cycle_index)
+{
+    for (int i = 0; i < pixels->size(); i++)
+    {
         (*pixels)[i]->val *= brightPerPixel[i];
     }
 }
@@ -24,7 +27,8 @@ void RandBrightnessAnimation::NewCycle(int cycleIndex)
 
 void RandBrightnessAnimation::RecalculateValues()
 {
-    for(int i=0; i<pixels->size(); i++) {
+    for (int i = 0; i < pixels->size(); i++)
+    {
         brightPerPixel[i] = random(5) / 4.0f;
     }
 }

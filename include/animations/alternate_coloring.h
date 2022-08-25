@@ -3,7 +3,8 @@
 
 #include <animations/i_animation.h>
 
-class AlternateColoringAnimation : public IAnimation {
+class AlternateColoringAnimation : public IAnimation
+{
 
 public:
   ~AlternateColoringAnimation();
@@ -13,9 +14,8 @@ public:
   void Render(float rel_time, int cycle_index);
 
 private:
-    HSV color1, color2;
-    int numberOfPixels = 3;
+  HSV color1, color2;
+  int numberOfPixels = 3;
 };
-
 
 #endif // __ALTERNATE_COLORING_H__

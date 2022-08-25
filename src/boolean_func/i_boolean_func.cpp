@@ -3,21 +3,27 @@
 #include <boolean_func/const_boolean_func.h>
 #include <boolean_func/equal_spreads_boolean_func.h>
 
-IBooleanFunc *BooleanFuncFactory(const JsonObject &func_params) {
+IBooleanFunc *BooleanFuncFactory(const JsonObject &func_params)
+{
 
     const char *func_type = func_params["t"];
-    if(func_type == NULL) {
+    if (func_type == NULL)
+    {
         return NULL;
     }
 
     IBooleanFunc *func = NULL;
-    if(strcmp(func_type, "const") == 0) {
+    if (strcmp(func_type, "const") == 0)
+    {
         func = new ConstBooleanFunc();
-    } else if(strcmp(func_type, "equalSpreads") == 0) {
+    }
+    else if (strcmp(func_type, "equalSpreads") == 0)
+    {
         func = new EqualSpreadBooleanFunc();
     }
 
-    if(func == NULL) {
+    if (func == NULL)
+    {
         return NULL;
     }
 
@@ -25,5 +31,3 @@ IBooleanFunc *BooleanFuncFactory(const JsonObject &func_params) {
 
     return func;
 }
-
-

@@ -4,7 +4,8 @@
 #include <animations/i_animation.h>
 #include <float_func/i_float_func.h>
 
-class RandBrightnessAnimation : public IAnimation {
+class RandBrightnessAnimation : public IAnimation
+{
 
 public:
     ~RandBrightnessAnimation();
@@ -19,8 +20,6 @@ private:
 
 private:
     float *brightPerPixel = nullptr;
-  
 };
-
 
 #endif // __RAND_BRIGHTNESS_H__

@@ -1,13 +1,16 @@
 #include <animations/confetti.h>
 
-ConfettiAnimation::ConfettiAnimation() {
+ConfettiAnimation::ConfettiAnimation()
+{
     brightPerPixel = new float[pixels->size()];
-    for(int i=0; i<pixels->size(); i++) {
+    for (int i = 0; i < pixels->size(); i++)
+    {
         brightPerPixel[i] = 1.0;
     }
 }
 
-ConfettiAnimation::~ConfettiAnimation() {
+ConfettiAnimation::~ConfettiAnimation()
+{
 
     delete[] brightPerPixel;
     brightPerPixel = nullptr;
@@ -16,20 +19,23 @@ ConfettiAnimation::~ConfettiAnimation() {
     fadeAmount = nullptr;
 }
 
-void ConfettiAnimation::InitFromJson(const JsonObject &animation_params) {
+void ConfettiAnimation::InitFromJson(const JsonObject &animation_params)
+{
     fadeAmount = FloatAnimationFactory(animation_params["fade"]);
 }
 
-void ConfettiAnimation::Render(float rel_time, int cycle_index) {
+void ConfettiAnimation::Render(float rel_time, int cycle_index)
+{
     Fade(rel_time);
 
-    for(int i=0; i<pixels->size(); i++) {
+    for (int i = 0; i < pixels->size(); i++)
+    {
         HSV *pixel = (*pixels)[i];
         pixel->val *= brightPerPixel[i];
     }
 }
 
-void ConfettiAnimation::Fade(float relTime) {
+void ConfettiAnimation::Fade(float relTime)
+{
     // float currFadeAmount = fadeAmount->GetValue(relTime);
-    
 }

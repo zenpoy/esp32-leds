@@ -6,7 +6,8 @@
 #include <boolean_func/i_boolean_func.h>
 #include <float_func/i_float_func.h>
 
-class AlternateAnimation : public IAnimation {
+class AlternateAnimation : public IAnimation
+{
 
 public:
   ~AlternateAnimation();
@@ -16,10 +17,9 @@ public:
   void Render(float rel_time, int cycle_index);
 
 private:
-    IBooleanFunc *alternateState;
-    int numberOfPixels;
-    IFloatFunc *hueShift;
+  IBooleanFunc *alternateState;
+  int numberOfPixels;
+  IFloatFunc *hueShift;
 };
-
 
 #endif // __ALTERNATE_H__

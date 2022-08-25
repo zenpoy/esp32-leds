@@ -3,8 +3,8 @@
 
 #include <animations/i_animation.h>
 
-
-class ConstColorAnimation : public IAnimation {
+class ConstColorAnimation : public IAnimation
+{
 
 public:
   ~ConstColorAnimation();
@@ -16,6 +16,5 @@ public:
 private:
   HSV colorToFill;
 };
-
 
 #endif // __CONST_COLOR_H__

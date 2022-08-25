@@ -9,38 +9,54 @@
 #include <float_func/comb2.h>
 #include <float_func/half.h>
 
-IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params) {
+IFloatFunc *FloatAnimationFactory(const JsonObject &animation_params)
+{
 
     const char *func_type = animation_params["t"];
-    if(func_type == NULL) {
+    if (func_type == NULL)
+    {
         return NULL;
     }
 
     IFloatFunc *func = NULL;
-    if(strcmp(func_type, "const") == 0) {
+    if (strcmp(func_type, "const") == 0)
+    {
         func = new ConstFloatFunc();
-    } else if(strcmp(func_type, "lin") == 0) {
+    }
+    else if (strcmp(func_type, "lin") == 0)
+    {
         func = new LinearFloatFunc();
-    } else if(strcmp(func_type, "sin") == 0) {
+    }
+    else if (strcmp(func_type, "sin") == 0)
+    {
         func = new SinFloatFunc();
-    } else if(strcmp(func_type, "seg") == 0) {
+    }
+    else if (strcmp(func_type, "seg") == 0)
+    {
         func = new SegmentFloatFunc();
-    } else if(strcmp(func_type, "steps") == 0) {
+    }
+    else if (strcmp(func_type, "steps") == 0)
+    {
         func = new StepsFloatFunc();
-    } else if(strcmp(func_type, "repeat") == 0) {
+    }
+    else if (strcmp(func_type, "repeat") == 0)
+    {
         func = new RepeatFloatFunc();
-    } else if(strcmp(func_type, "comb2") == 0) {
+    }
+    else if (strcmp(func_type, "comb2") == 0)
+    {
         func = new Comb2FloatFunc();
-    } else if(strcmp(func_type, "half") == 0) {
+    }
+    else if (strcmp(func_type, "half") == 0)
+    {
         func = new HalfFloatFunc();
     }
 
-    if(func == NULL) {
+    if (func == NULL)
+    {
         return NULL;
     }
 
     func->InitFromJson(animation_params);
     return func;
 }
-
-

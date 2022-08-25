@@ -9,7 +9,7 @@
 #include <hsv.h>
 #include <animations/i_animation.h>
 
-class AnimationsContainer 
+class AnimationsContainer
 {
 
 public:
@@ -20,8 +20,6 @@ public:
 
 private:
     static bool InitJsonDocFromFile(const String &songName, JsonDocument &docForParsing);
-
 };
-
 
 #endif // __ANIMATIONS_CONTAINER_H__

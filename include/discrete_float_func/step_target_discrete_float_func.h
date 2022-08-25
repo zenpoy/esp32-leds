@@ -4,15 +4,16 @@
 #include "i_discrete_float_func.h"
 #include "math.h"
 
-class StepTargetDiscreteFloatFunc : public IDiscreteFloatFunc {
+class StepTargetDiscreteFloatFunc : public IDiscreteFloatFunc
+{
 
 public:
-
-    void InitFromJson(const JsonObject &func_params, float total) {
+    void InitFromJson(const JsonObject &func_params, float total)
+    {
         this->start = func_params["start"];
 
         float total_ceil = ceil(total);
-        if(total_ceil <= 1)
+        if (total_ceil <= 1)
         {
             this->dx = 0.0;
         }
@@ -23,7 +24,8 @@ public:
         }
     }
 
-    float GetValue(int i) {
+    float GetValue(int i)
+    {
 
         return start + i * dx;
     }

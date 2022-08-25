@@ -3,11 +3,10 @@
 
 #include <boolean_func/i_boolean_func.h>
 
-class ConstBooleanFunc : public IBooleanFunc 
+class ConstBooleanFunc : public IBooleanFunc
 {
 
 public:
-
     void InitFromJson(const JsonObject &animation_params)
     {
         valueToReturn = animation_params["v"];

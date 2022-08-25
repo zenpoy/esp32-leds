@@ -9,14 +9,14 @@
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
 
-
 #ifdef NUM_LEDS
 #define MAX_SUPPORTED_PIXELS NUM_LEDS
 #else
 #define MAX_SUPPORTED_PIXELS 1500
 #endif // NUM_LEDS
 
-class AnimationFactory {
+class AnimationFactory
+{
 
 public:
   static std::list<IAnimation *> *AnimationsListFromJson(JsonDocument &doc);
@@ -33,7 +33,6 @@ private:
 private:
   typedef std::map<std::string, const std::vector<HSV *> *> LedObjectMap;
   static LedObjectMap object_map;
-
 };
 
 #endif // __ANIMATION_FACTORY_H__
