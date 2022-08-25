@@ -389,19 +389,23 @@ void setup()
   deleteAnListQueue = xQueueCreate(deleteAnListQueueSize, sizeof(const AnimationsList *));
   wdQueue = xQueueCreate(wdQueueSize, sizeof(int));
 
+  PrintCorePrefix();
   Serial.println("=== setup ===");
   Serial.print("Thing name: ");
   Serial.println(THING_NAME);
 
   bool ok = false;
-  Serial.println("fsManager.setup() ");
+  PrintCorePrefix();
+  Serial.print("fsManager.setup() ");
   ok = fsManager.setup();
   Serial.println(ok ? " ok " : "FAIL");
 
-  Serial.print("renderUtils.Setup() ");
+  PrintCorePrefix();
+  Serial.println("renderUtils.Setup() ");
   renderUtils.Setup();
 
-  Serial.print("ReadObjectsConfigFile ");
+  PrintCorePrefix();
+  Serial.println("ReadObjectsConfigFile ");
   ReadObjectsConfigFile("/objects-config");
 
   xTaskCreatePinnedToCore(
