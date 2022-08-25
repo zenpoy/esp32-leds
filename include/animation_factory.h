@@ -17,10 +17,9 @@
 
 class AnimationFactory
 {
-
 public:
-  static std::list<IAnimation *> *AnimationsListFromJson(JsonDocument &doc);
-  static void CreateAnimationAndAppend(JsonObject anJsonConfig, const char *pixelsName, std::list<IAnimation *> *listToAppend);
+  static AnimationsList *AnimationsListFromJson(JsonDocument &doc);
+  static void CreateAnimationAndAppend(JsonObject anJsonConfig, const char *pixelsName, AnimationsList *listToAppend);
   static IAnimation *CreateAnimation(const JsonObject &animationAsJsonObj, const char *pixelsName);
   static int InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &f);
 

@@ -36,7 +36,7 @@ TaskHandle_t Task1;
 struct NewSongMsg
 {
   bool onlyUpdateTime;
-  const AnimationsContainer::AnimationsList *anList;
+  const AnimationsList *anList;
   int32_t songStartTime;
 };
 QueueHandle_t anListQueue;
@@ -109,9 +109,11 @@ void CheckForSongStartTimeChange()
 
 void SendAnListUpdate()
 {
+  Serial.println("SendAnListUpdate");
   NewSongMsg msg;
   if (songOffsetTracker.IsSongPlaying())
   {
+    Serial.println("IsSongPlaying");
     String currFileName = songOffsetTracker.GetCurrentFile();
     PrintCorePrefix();
     Serial.print("currFileName: ");
@@ -153,24 +155,20 @@ void SendStartTimeToRenderCore()
   msg.songStartTime = songOffsetTracker.GetSongStartTime();
   msg.anList = nullptr;
   PrintCorePrefix();
-  Serial.println("updateing time of current song start");
+  Serial.println("updating time of current song start");
   xQueueSend(anListQueue, &msg, portMAX_DELAY);
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-
-  Serial.print("{{ MQTT Message on topic ");
-  Serial.print("[");
+  PrintCorePrefix();
+  Serial.print("MQTT message on topic ");
   Serial.print(topic);
-  Serial.print("] ");
-  Serial.print("size: ");
+  Serial.print(" size: ");
   Serial.print(length);
   Serial.println("");
-  Serial.println("payload:");
-  Serial.print("  ");
-  Serial.print((char*)payload);
-  Serial.println();
+  // Serial.println("payload:");
+  // Serial.println((char*)payload);
 
   if (strncmp("animations/", topic, 11) == 0)
   {
@@ -194,7 +192,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     ESP.restart();
   }
 
-  Serial.print("}} [0] done handling mqtt callback: ");
+  Serial.print("done handling mqtt callback: ");
   Serial.println(topic);
 }
 
@@ -210,8 +208,8 @@ void ConnectToWifi()
     WiFi.disconnect();
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID, WIFI_PASSWORD);
-    Serial.printf("Attempting to connect to SSID: ");
-    Serial.printf(SSID);
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(SSID);
     while (millis() - connectStartTime < 10000)
     {
       Serial.print(".");
@@ -246,10 +244,21 @@ void ConnectToMessageBroker()
   Serial.println("connecting to mqtt");
   if (client.connect(THING_NAME, MONITOR_TOPIC, 1, true, lastWillMsg))
   {
-    Serial.println("connected to message broker");
-    client.subscribe((String("objects-config/") + String(THING_NAME)).c_str(), 1);
-    client.subscribe("current-song", 1);
-    client.subscribe((String("animations/") + String(THING_NAME) + String("/#")).c_str(), 1);
+    Serial.print("  connected to message broker");
+    Serial.print(". monitor topic:");
+    Serial.print(MONITOR_TOPIC);
+    
+    String objectTopic = "objects-config/" + String(THING_NAME);
+    bool ok = client.subscribe(objectTopic.c_str(), 1);
+    Serial.printf("  subscribed to topic %s, %d", objectTopic, ok);
+    
+    String currentSongTopic = "current-song";
+    ok = client.subscribe(currentSongTopic.c_str(), 1);
+    Serial.printf("  subscribed to mqtt topic %s, %d", currentSongTopic, ok);
+
+    String animationsTopic = "animations/" + String(THING_NAME) + "/#";
+    client.subscribe(animationsTopic.c_str(), 1);
+    Serial.printf("  subscribed to mqtt topic %s, %d", animationsTopic, ok);
   }
   else
   {
@@ -264,7 +273,7 @@ void HandleObjectsConfig(File &f)
   int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc, f);
   if (AnimationFactory::objectsMapErrorString == NULL)
   {
-    Serial.print("total pixels: ");
+    Serial.print("initialized object map. total pixels: ");
     Serial.println(totalPixels);
   }
   else
@@ -299,6 +308,8 @@ void SendMonitorMsg(char *buffer, size_t bufferSize)
   // report to monitor what song is running, animations, etc.
 }
 
+NewSongMsg global_msg;
+
 void MonitorLoop(void *parameter)
 {
 
@@ -329,7 +340,14 @@ void MonitorLoop(void *parameter)
       Serial.print(" wifi:");
       Serial.print(WiFi.status() == WL_CONNECTED);
       Serial.print(" mqtt: ");
-      Serial.println(client.connected());
+      Serial.print(client.connected());
+
+      Serial.print(" hasValidSong: ");
+      Serial.print(global_msg.anList != nullptr);
+
+      Serial.print(" songOffset: ");
+      Serial.print(((int32_t)millis()) - global_msg.songStartTime);
+      Serial.println();
     }
     client.loop();
     bool clockChanged, clockFirstValid;
@@ -349,8 +367,6 @@ void MonitorLoop(void *parameter)
     vTaskDelay(5);
   }
 }
-
-NewSongMsg global_msg;
 
 void setup()
 {
@@ -445,7 +461,7 @@ void loop()
     // Serial.println(currList->size());
     // Serial.print("song offset: ");
     // Serial.println(songOffset);
-    for (AnimationsContainer::AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++)
+    for (AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++)
     {
       IAnimation *animation = *it;
       if (animation != nullptr && animation->IsActive(songOffset))

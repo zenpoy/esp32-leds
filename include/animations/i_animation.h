@@ -3,8 +3,13 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <list>
+#include <map>
 #include <vector>
 #include <hsv.h>
+
+class IAnimation;
+typedef std::list<IAnimation *> AnimationsList;
 
 class IAnimation
 {
@@ -72,5 +77,6 @@ protected:
 
   int lastCycleIndex = -1;
 };
+
 
 #endif // __I_ANIMATIONS_H__

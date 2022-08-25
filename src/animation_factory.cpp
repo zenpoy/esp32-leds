@@ -94,12 +94,12 @@ const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, con
   return NULL;
 }
 
-std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &doc)
+AnimationsList *AnimationFactory::AnimationsListFromJson(JsonDocument &doc)
 {
 
   JsonArray array = doc.as<JsonArray>();
 
-  std::list<IAnimation *> *animationsList = new std::list<IAnimation *>();
+  AnimationsList *animationsList = new AnimationsList();
   for (int i = 0; i < array.size(); i++)
   {
 
@@ -146,7 +146,7 @@ std::list<IAnimation *> *AnimationFactory::AnimationsListFromJson(JsonDocument &
 //   lastHeap = currFreeHeap;
 // }
 
-void AnimationFactory::CreateAnimationAndAppend(JsonObject anJsonConfig, const char *pixelsName, std::list<IAnimation *> *listToAppend)
+void AnimationFactory::CreateAnimationAndAppend(JsonObject anJsonConfig, const char *pixelsName, AnimationsList *listToAppend)
 {
   IAnimation *animationObj = CreateAnimation(anJsonConfig, pixelsName);
   if (animationObj == nullptr)

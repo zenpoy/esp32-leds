@@ -3,7 +3,7 @@
 #include <SPIFFS.h>
 #include <animation_factory.h>
 
-const AnimationsContainer::AnimationsList *AnimationsContainer::SetFromJsonFile(const String &songName, JsonDocument &docForParsing)
+const AnimationsList *AnimationsContainer::SetFromJsonFile(const String &songName, JsonDocument &docForParsing)
 {
   bool success = InitJsonDocFromFile(songName, docForParsing);
   if (!success)
