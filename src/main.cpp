@@ -63,7 +63,7 @@ void Core0WDSend(unsigned int currMillis)
   static unsigned int lastWdSendTime = 0;
   if (currMillis - lastWdSendTime > WD_TIMEOUT_MS)
   {
-    Serial.println("[0] send wd msg from core 0 to core 1");
+    // Serial.println("[0] send wd msg from core 0 to core 1");
     int unused = 0;
     xQueueSend(wdQueue, &unused, 5);
     lastWdSendTime = currMillis;
@@ -160,15 +160,16 @@ void SendStartTimeToRenderCore()
 void callback(char *topic, byte *payload, unsigned int length)
 {
 
-  Serial.print("Message arrived, ");
-  Serial.print(length);
-  Serial.print(" [");
+  Serial.print("{{ MQTT Message on topic ");
+  Serial.print("[");
   Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++)
-  {
-    Serial.print((char)payload[i]);
-  }
+  Serial.print("size: ");
+  Serial.print(length);
+  Serial.println("");
+  Serial.println("payload:");
+  Serial.print("  ");
+  Serial.print((char*)payload);
   Serial.println();
 
   if (strncmp("animations/", topic, 11) == 0)
@@ -193,7 +194,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     ESP.restart();
   }
 
-  Serial.print("[0] done handling mqtt callback: ");
+  Serial.print("}} [0] done handling mqtt callback: ");
   Serial.println(topic);
 }
 
@@ -293,7 +294,9 @@ void SendMonitorMsg(char *buffer, size_t bufferSize)
   json_doc["ThingName"] = THING_NAME;
   json_doc["Alive"] = true;
   json_doc["WifiSignal"] = WiFi.RSSI();
+  json_doc["millis"] = millis();
   serializeJson(json_doc, buffer, bufferSize);
+  // report to monitor what song is running, animations, etc.
 }
 
 void MonitorLoop(void *parameter)
@@ -319,30 +322,26 @@ void MonitorLoop(void *parameter)
     }
     if (currTime - lastReportTime >= 5000)
     {
-      Serial.print("[0] current millis: ");
-      Serial.println(millis());
-      Serial.print("[0] wifi client connected: ");
-      Serial.println(WiFi.status() == WL_CONNECTED);
-      Serial.print("[0] mqtt client connected: ");
-      Serial.println(client.connected());
       lastReportTime = currTime;
+
+      Serial.print("[0] status millis: ");
+      Serial.print(millis());
+      Serial.print(" wifi:");
+      Serial.print(WiFi.status() == WL_CONNECTED);
+      Serial.print(" mqtt: ");
+      Serial.println(client.connected());
     }
     client.loop();
     bool clockChanged, clockFirstValid;
     songOffsetTracker.loop(&clockChanged, &clockFirstValid);
     if (clockChanged)
     {
-      Serial.print("clockChanged ");
       if (clockFirstValid)
       {
-        Serial.println("clockFirstValid");
-        Serial.println("SendAnListUpdate ");
         SendAnListUpdate();
       }
       else
       {
-        Serial.print("else: clockFirstValid=FALSE");
-        Serial.println("SendStartTimeToRenderCore ");
         SendStartTimeToRenderCore();
       }
     }
@@ -405,7 +404,7 @@ void loop()
 
   if (currentMillis - lastPrint1Time >= 5000)
   {
-    Serial.println("[1] core 1 alive");
+    // Serial.println("[1] core 1 alive");
     lastPrint1Time = currentMillis;
   }
 
@@ -417,11 +416,11 @@ void loop()
     Serial.println(newMsg.songStartTime);
     Serial.print("[1] an list valid: ");
     Serial.println(newMsg.anList != nullptr);
-    Serial.print("[1] only update time: ");
     Serial.println(newMsg.onlyUpdateTime);
 
     if (newMsg.onlyUpdateTime)
     {
+      Serial.print("[1] only update time: ");
       global_msg.songStartTime = newMsg.songStartTime;
     }
     else
