@@ -20,7 +20,6 @@ const char *AnimationFactory::objectsMapErrorString = "no configuration availibl
 
 int AnimationFactory::InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &f)
 {
-
   DeserializationError jsonError = deserializeJson(doc, f);
   if (jsonError)
   {
@@ -49,7 +48,7 @@ int AnimationFactory::InitObjectsConfig(HSV ledsArr[], JsonDocument &doc, File &
   const char *objectsMapErr = InitObjectsMap(ledsArr, totalPixels, objectsMap);
   if (objectsMapErr != NULL)
   {
-    object_map = AnimationFactory::LedObjectMap();
+    object_map = LedObjectMap();
     objectsMapErrorString = objectsMapErr;
     return 0;
   }
@@ -63,7 +62,6 @@ const char *AnimationFactory::InitObjectsMap(HSV ledsArr[], int totalPixels, con
 {
   for (JsonPair p : objectsMap)
   {
-
     const char *key = p.key().c_str();
     JsonArray indices = p.value().as<JsonArray>();
 
@@ -158,7 +156,7 @@ void AnimationFactory::CreateAnimationAndAppend(JsonObject anJsonConfig, const c
 IAnimation *AnimationFactory::CreateAnimation(const JsonObject &animationAsJsonObj, const char *pixelsName)
 {
 
-  AnimationFactory::LedObjectMap::iterator pixelsPtrIt = object_map.find(std::string(pixelsName));
+  LedObjectMap::iterator pixelsPtrIt = object_map.find(std::string(pixelsName));
   if (pixelsPtrIt == object_map.end())
   {
     Serial.print("animation ignored - pixels not in mapping: ");

@@ -268,20 +268,28 @@ void ConnectToMessageBroker()
   }
 }
 
-void HandleObjectsConfig(File &f)
+void ReadObjectsConfigFile(String filename)
 {
-
-  int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc, f);
-  if (AnimationFactory::objectsMapErrorString == NULL)
+  File file = SPIFFS.open(filename.c_str());
+  if (file)
   {
-    Serial.print("initialized object map. total pixels: ");
-    Serial.println(totalPixels);
+    int totalPixels = AnimationFactory::InitObjectsConfig(leds_hsv, doc, file);
+    if (AnimationFactory::objectsMapErrorString == NULL)
+    {
+      Serial.print("initialized object map. total pixels: ");
+      Serial.println(totalPixels);
+    }
+    else
+    {
+      Serial.print("objects map encountered an error while initializing: ");
+      Serial.println(AnimationFactory::objectsMapErrorString);
+    }
   }
   else
   {
-    Serial.print("objects map encountered an error while initializing: ");
-    Serial.println(AnimationFactory::objectsMapErrorString);
+    Serial.println("Failed to open objects config file for reading");
   }
+  file.close();
 }
 
 void DeleteAnListPtr()
@@ -381,7 +389,7 @@ void setup()
   deleteAnListQueue = xQueueCreate(deleteAnListQueueSize, sizeof(const AnimationsList *));
   wdQueue = xQueueCreate(wdQueueSize, sizeof(int));
 
-  Serial.print("=== setup ===");
+  Serial.println("=== setup ===");
   Serial.print("Thing name: ");
   Serial.println(THING_NAME);
 
@@ -393,16 +401,8 @@ void setup()
   Serial.print("renderUtils.Setup() ");
   renderUtils.Setup();
 
-  File file = SPIFFS.open("/objects-config");
-  if (file)
-  {
-    HandleObjectsConfig(file);
-    file.close();
-  }
-  else
-  {
-    Serial.println("Failed to open objects config file for reading");
-  }
+  Serial.print("ReadObjectsConfigFile ");
+  ReadObjectsConfigFile("/objects-config");
 
   xTaskCreatePinnedToCore(
       MonitorLoop,   /* Function to implement the task */
