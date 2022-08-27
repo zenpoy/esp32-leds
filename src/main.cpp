@@ -2,15 +2,15 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <secrets.h>
 #include <PubSubClient.h>
+#include <secrets.h>
 
 #include <animations/i_animation.h>
-#include <render_utils.h>
-#include <song_offset_tracker.h>
+#include <animation_factory.h>
 #include <animations_container.h>
 #include <fs_manager.h>
-#include <animation_factory.h>
+#include <render_utils.h>
+#include <song_offset_tracker.h>
 
 #include "SPIFFS.h"
 

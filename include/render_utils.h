@@ -4,9 +4,13 @@
 #include <hsv.h>
 
 #include <NeoPixelBus.h>
-#include <secrets.h>
 
+#ifndef DATA_PIN
 #define DATA_PIN 2
+#endif
+#ifndef COLOR_ORDER
+#define COLOR_ORDER NeoRgbFeature // can also be NeoGrbFeature
+#endif
 
 class RenderUtils
 {
