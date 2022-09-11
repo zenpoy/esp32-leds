@@ -104,7 +104,17 @@ void loop()
   }
   strip.Show();
 
-  delay(1000);
+  for (int steps = 100, d = 0; d < steps; d++)
+  {
+    for (uint16_t p = 0; p < strip.PixelCount(); p++)
+    {
+      RgbColor c = strip.GetPixelColor(p);
+      c.Darken(1);
+      strip.SetPixelColor(p, c);
+    }
+    strip.Show();
+    delay(2000 / steps);
+  }
 
   for (uint16_t ti = x0; ti <= x1; ti++)
   {
