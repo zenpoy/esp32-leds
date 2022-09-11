@@ -80,36 +80,33 @@ void loop()
   RgbColor c00 = white, c10 = red;
   RgbColor c01 = blue, c11 = green;
 
+  // four corners
   strip.SetPixelColor(mosaic.Map(x0, y0), white);
-  strip.Show();
-  delay(100);
   strip.SetPixelColor(mosaic.Map(x1, y0), red);
-  strip.Show();
-  delay(100);
   strip.SetPixelColor(mosaic.Map(x1, y1), green);
-  strip.Show();
-  delay(100);
   strip.SetPixelColor(mosaic.Map(x0, y1), blue);
-  strip.Show();
-  delay(100);
+  delay(500);
 
+  // bilinear blend
   for (uint16_t i = x0; i <= x1; i++)
   {
     for (uint16_t j = y0; j <= y1; j++)
     {
-      float x = (1.0 * i - x0) / x1 - x0;
-      float y = (1.0 * j - y0) / y1 - y0;
+      float x = (1.0 * i - x0) / (x1 - x0);
+      float y = (1.0 * j - y0) / (y1 - y0);
       strip.SetPixelColor(mosaic.Map(i, j), RgbColor::BilinearBlend(c00, c01, c10, c11, x, y));
     }
   }
   strip.Show();
+  delay(500);
 
+  // darken
   for (int steps = 100, d = 0; d < steps; d++)
   {
     for (uint16_t p = 0; p < strip.PixelCount(); p++)
     {
       RgbColor c = strip.GetPixelColor(p);
-      c.Darken(1);
+      c.Darken(1); // subtracts 1 from r,g,b. eq: r--,g--,b--;
       strip.SetPixelColor(p, c);
     }
     strip.Show();
@@ -145,8 +142,7 @@ void loop()
     delay(100);
   }
 
-  Serial.println();
-  Serial.println("Cleared to black ...");
   strip.ClearTo(black);
   strip.Show();
+  delay(1000);
 }
