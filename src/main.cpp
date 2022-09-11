@@ -61,11 +61,6 @@ void setup()
 
   Serial.println();
   Serial.println("Running...");
-}
-
-void loop()
-{
-  delay(2500);
 
   Serial.println();
   Serial.println("If your panel is correctly defined, you should see:");
@@ -73,9 +68,10 @@ void loop()
   Serial.println("Upper Right 0,1 is Red    -^ ");
   Serial.println("Lower Right 1,1 is Green  -v ");
   Serial.println("Lower Left  1,0 is Blue  v- ");
+}
 
-  // use the topo to map the 2d cordinate to the pixel
-  // and use that to SetPixelColor
+void loop()
+{
   const uint16_t x0 = 0;
   const uint16_t x1 = PanelWidth - 1;
   const uint16_t y0 = 0;
@@ -86,16 +82,16 @@ void loop()
 
   strip.SetPixelColor(mosaic.Map(x0, y0), white);
   strip.Show();
-  delay(300);
+  delay(100);
   strip.SetPixelColor(mosaic.Map(x1, y0), red);
   strip.Show();
-  delay(300);
+  delay(100);
   strip.SetPixelColor(mosaic.Map(x1, y1), green);
   strip.Show();
-  delay(300);
+  delay(100);
   strip.SetPixelColor(mosaic.Map(x0, y1), blue);
   strip.Show();
-  delay(1300);
+  delay(100);
 
   for (uint16_t i = x0; i <= x1; i++)
   {
@@ -108,7 +104,36 @@ void loop()
   }
   strip.Show();
 
-  delay(3000);
+  delay(1000);
+
+  for (uint16_t ti = x0; ti <= x1; ti++)
+  {
+    for (uint16_t i = x0; i <= x1; i++)
+    {
+      for (uint16_t j = y0; j <= y1; j++)
+      {
+        RgbColor color = i == ti ? red : black;
+        strip.SetPixelColor(mosaic.Map(i, j), color);
+      }
+    }
+
+    strip.Show();
+    delay(100);
+  }
+
+  for (uint16_t tj = y0; tj <= y1; tj++)
+  {
+    for (uint16_t i = x0; i <= x1; i++)
+    {
+      for (uint16_t j = y0; j <= y1; j++)
+      {
+        RgbColor color = j == tj ? green : black;
+        strip.SetPixelColor(mosaic.Map(i, j), color);
+      }
+    }
+    strip.Show();
+    delay(100);
+  }
 
   Serial.println();
   Serial.println("Cleared to black ...");
