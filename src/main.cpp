@@ -10,26 +10,7 @@
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBus.h>
 
-// uncomment one of these that matches your panel pixel layouts
-// rotation is ignored for mosaic as it applies a rotation for you
-// that is specific to the location of the panel within the mosaic
-// to reduce connection lengths
-
-// typedef ColumnMajorAlternatingLayout MyPanelLayout;
-// typedef ColumnMajorLayout MyPanelLayout;
-// typedef RowMajorAlternatingLayout MyPanelLayout;
-// typedef RowMajorLayout MyPanelLayout;
-// typedef RowMajorAlternating270Layout MyPanelLayout;
-typedef ColumnMajorAlternating180Layout MyPanelLayout;
-
-// make sure to set these panel values to the sizes of yours
-const uint8_t PanelWidth = 10; // 8 pixel x 8 pixel matrix of leds
-const uint8_t PanelHeight = 20;
-const uint8_t TileWidth = 1; // laid out in 4 panels x 2 panels mosaic
-const uint8_t TileHeight = 1;
-
-const uint16_t PixelCount = PanelWidth * PanelHeight * TileWidth * TileHeight;
-const uint8_t PixelPin = 2;
+#include "panel_config.h"
 
 NeoMosaic<MyPanelLayout> mosaic(
     PanelWidth,
@@ -38,14 +19,16 @@ NeoMosaic<MyPanelLayout> mosaic(
     TileHeight);
 
 NeoPixelBus<NeoRgbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
-// for esp8266 omit the pin
-// NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount);
+NeoGamma<NeoGammaTableMethod> colorGamma;
 
 RgbColor red(128, 0, 0);
 RgbColor green(0, 128, 0);
 RgbColor blue(0, 0, 128);
 RgbColor white(128);
 RgbColor black(0);
+
+NeoPixelAnimator animations(PixelCount, NEO_MILLISECONDS);
+void SetupAnimationSet();
 
 void setup()
 {
@@ -113,6 +96,7 @@ void loop()
     delay(2000 / steps);
   }
 
+  // red vertical line | all rows slide from right to left
   for (uint16_t ti = x0; ti <= x1; ti++)
   {
     for (uint16_t i = x0; i <= x1; i++)
@@ -125,9 +109,10 @@ void loop()
     }
 
     strip.Show();
-    delay(100);
+    delay(30);
   }
 
+  // green line | all rows slide from bottom to top
   for (uint16_t tj = y0; tj <= y1; tj++)
   {
     for (uint16_t i = x0; i <= x1; i++)
@@ -139,10 +124,61 @@ void loop()
       }
     }
     strip.Show();
-    delay(100);
+    delay(30);
   }
 
   strip.ClearTo(black);
   strip.Show();
   delay(1000);
+
+  // .. animations
+  SetupAnimationSet();
+  while (animations.IsAnimating())
+  {
+    animations.UpdateAnimations();
+    strip.Show();
+  }
+}
+
+void SetupAnimationSet()
+{
+  for (uint16_t pixel = 0; pixel < PixelCount; pixel++)
+  {
+    const uint8_t peak = 128;
+    uint16_t time = 5000;
+
+    RgbColor originalColor = strip.GetPixelColor(pixel);
+    RgbColor targetColor = RgbColor(random(peak), random(peak), random(peak));
+
+    AnimEaseFunction easing;
+    switch (random(3))
+    {
+    case 0:
+      easing = NeoEase::CubicIn;
+      break;
+    case 1:
+      easing = NeoEase::CubicOut;
+      break;
+    case 2:
+      easing = NeoEase::QuadraticInOut;
+      break;
+    }
+
+    AnimUpdateCallback animUpdate = [=](const AnimationParam &param)
+    {
+      // progress will start at 0.0 and end at 1.0
+      // we convert to the curve we want
+      float progress = easing(param.progress);
+
+      // use the curve value to apply to the animation
+      RgbColor updatedColor = RgbColor::LinearBlend(originalColor, targetColor, progress);
+      updatedColor = colorGamma.Correct(updatedColor);
+
+      strip.SetPixelColor(pixel, updatedColor);
+    };
+
+    // now use the animation properties we just calculated and start the animation
+    // which will continue to run and call the update function until it completes
+    animations.StartAnimation(pixel, time, animUpdate);
+  }
 }
