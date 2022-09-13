@@ -213,27 +213,26 @@ void loop()
   Serial.println("contents:");
   delay(50);
 
-  int dur = 10000;                                  // millisec
-  for (int f = 0; f < dur && file.available(); f++) // frames
+  const int bufSize = PixelCount * 3;
+  const int headerSize = bufSize + 4;
+  uint8_t buffer[bufSize];
+
+  int dur = 10000;                                                            // millisec
+  for (int f = 0; f < dur && file.read(buffer, headerSize) == headerSize; f++) // frames
   {
-    Serial.println(f);
+    Serial.write(f);
 
-    int ts = file.read();
-    Serial.write((String(ts, 16) + ' ').c_str());
-    ts = file.read();
-    Serial.write((String(ts, 16) + ' ').c_str());
-    ts = file.read();
-    Serial.write((String(ts, 16) + ' ').c_str());
-    ts = file.read();
-    Serial.write((String(ts, 16) + ' ').c_str());
+    // unsigned int bytesRead = ;
+    Serial.write((String(buffer[0], 16) + ' ').c_str());
+    Serial.write((String(buffer[1], 16) + ' ').c_str());
+    Serial.write((String(buffer[2], 16) + ' ').c_str());
+    Serial.write((String(buffer[3], 16) + ' ').c_str());
     Serial.println("");
-
-    // RgbColor buf[PixelCount]
     for (int i = 0; i < PixelCount; i++)
     {
-      int r = file.read(); // byte
-      int g = file.read();
-      int b = file.read();
+      int r = buffer[4 + 3 * i + 0];
+      int g = buffer[4 + 3 * i + 1];
+      int b = buffer[4 + 3 * i + 2];
 
       RgbColor color(r, g, b);
       // color.Darken(100);
@@ -242,8 +241,7 @@ void loop()
       strip.SetPixelColor(i, color);
     }
     strip.Show();
-    delay(5);
+    delay(20);
   }
   file.close();
-  delay(10);
 }
