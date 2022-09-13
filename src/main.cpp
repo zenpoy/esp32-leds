@@ -1,12 +1,13 @@
 //----------------------------------------------------------------------
-// NeoPixelTopologyTest
-// This will display specific colors in specific locations on the led panels
+// Test
+// This will display on the led panels
 //
-// This is useful in confirming the layout of your panels
+// This is useful
 //
-// It does require that you have the actual panels connected
+// It does
 //----------------------------------------------------------------------
 
+#include <SPIFFS.h>
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBus.h>
 
@@ -28,7 +29,44 @@ RgbColor white(128);
 RgbColor black(0);
 
 NeoPixelAnimator animations(PixelCount, NEO_MILLISECONDS);
-void SetupAnimationSet();
+void SetupAnimationSet(uint16_t duration, const uint8_t peak = 128)
+{
+  for (uint16_t pixel = 0; pixel < PixelCount; pixel++)
+  {
+    RgbColor originalColor = strip.GetPixelColor(pixel);
+    RgbColor targetColor = RgbColor(random(peak), random(peak), random(peak));
+    AnimEaseFunction easing;
+    switch (random(3))
+    {
+    case 0:
+      easing = NeoEase::CubicIn;
+      break;
+    case 1:
+      easing = NeoEase::CubicOut;
+      break;
+    case 2:
+      easing = NeoEase::QuadraticInOut;
+      break;
+    }
+
+    AnimUpdateCallback animUpdate = [=](const AnimationParam &param)
+    {
+      // progress will start at 0.0 and end at 1.0
+      // we convert to the curve we want
+      float progress = easing(param.progress);
+
+      // use the curve value to apply to the animation
+      RgbColor updatedColor = RgbColor::LinearBlend(originalColor, targetColor, progress);
+      updatedColor = colorGamma.Correct(updatedColor);
+
+      strip.SetPixelColor(pixel, updatedColor);
+    };
+
+    // now use the animation properties we just calculated and start the animation
+    // which will continue to run and call the update function until it completes
+    animations.StartAnimation(pixel, duration, animUpdate);
+  }
+}
 
 void setup()
 {
@@ -64,12 +102,14 @@ void loop()
   RgbColor c01 = blue, c11 = green;
 
   // four corners
+  Serial.println("four corners");
   strip.SetPixelColor(mosaic.Map(x0, y0), white);
   strip.SetPixelColor(mosaic.Map(x1, y0), red);
   strip.SetPixelColor(mosaic.Map(x1, y1), green);
   strip.SetPixelColor(mosaic.Map(x0, y1), blue);
   delay(500);
 
+  Serial.println("Bilinear blend");
   // bilinear blend
   for (uint16_t i = x0; i <= x1; i++)
   {
@@ -84,6 +124,7 @@ void loop()
   delay(500);
 
   // darken
+  Serial.println("darken");
   for (int steps = 100, d = 0; d < steps; d++)
   {
     for (uint16_t p = 0; p < strip.PixelCount(); p++)
@@ -93,10 +134,12 @@ void loop()
       strip.SetPixelColor(p, c);
     }
     strip.Show();
-    delay(2000 / steps);
+    delay(20 / steps);
   }
 
   // red vertical line | all rows slide from right to left
+  Serial.println("red - line");
+
   for (uint16_t ti = x0; ti <= x1; ti++)
   {
     for (uint16_t i = x0; i <= x1; i++)
@@ -113,6 +156,7 @@ void loop()
   }
 
   // green line | all rows slide from bottom to top
+  Serial.println("green | line");
   for (uint16_t tj = y0; tj <= y1; tj++)
   {
     for (uint16_t i = x0; i <= x1; i++)
@@ -129,56 +173,77 @@ void loop()
 
   strip.ClearTo(black);
   strip.Show();
-  delay(1000);
+  delay(10);
 
   // .. animations
-  SetupAnimationSet();
+  Serial.println("animations");
+
+  SetupAnimationSet(20);
   while (animations.IsAnimating())
   {
     animations.UpdateAnimations();
     strip.Show();
   }
-}
+  delay(100);
 
-void SetupAnimationSet()
-{
-  for (uint16_t pixel = 0; pixel < PixelCount; pixel++)
+  String filename = "/tstst.bin";
+
+  // play()
+  Serial.println("play file");
+
+  strip.ClearTo(black);
+  if (!SPIFFS.begin(true))
   {
-    const uint8_t peak = 128;
-    uint16_t time = 5000;
-
-    RgbColor originalColor = strip.GetPixelColor(pixel);
-    RgbColor targetColor = RgbColor(random(peak), random(peak), random(peak));
-
-    AnimEaseFunction easing;
-    switch (random(3))
-    {
-    case 0:
-      easing = NeoEase::CubicIn;
-      break;
-    case 1:
-      easing = NeoEase::CubicOut;
-      break;
-    case 2:
-      easing = NeoEase::QuadraticInOut;
-      break;
-    }
-
-    AnimUpdateCallback animUpdate = [=](const AnimationParam &param)
-    {
-      // progress will start at 0.0 and end at 1.0
-      // we convert to the curve we want
-      float progress = easing(param.progress);
-
-      // use the curve value to apply to the animation
-      RgbColor updatedColor = RgbColor::LinearBlend(originalColor, targetColor, progress);
-      updatedColor = colorGamma.Correct(updatedColor);
-
-      strip.SetPixelColor(pixel, updatedColor);
-    };
-
-    // now use the animation properties we just calculated and start the animation
-    // which will continue to run and call the update function until it completes
-    animations.StartAnimation(pixel, time, animUpdate);
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
   }
+
+  auto file = SPIFFS.open(filename);
+  if (!file)
+  {
+    Serial.println("Failed to open file!");
+    return;
+  }
+
+  Serial.println("file:");
+  Serial.println("name:" + filename);
+  Serial.println("size:");
+  Serial.println(file.size());
+  delay(500);
+  Serial.println("contents:");
+  delay(50);
+
+  int dur = 10000;                                  // millisec
+  for (int f = 0; f < dur && file.available(); f++) // frames
+  {
+    Serial.println(f);
+
+    int ts = file.read();
+    Serial.write((String(ts, 16) + ' ').c_str());
+    ts = file.read();
+    Serial.write((String(ts, 16) + ' ').c_str());
+    ts = file.read();
+    Serial.write((String(ts, 16) + ' ').c_str());
+    ts = file.read();
+    Serial.write((String(ts, 16) + ' ').c_str());
+    Serial.println("");
+
+    // RgbColor buf[PixelCount]
+    for (int i = 0; i < PixelCount; i++)
+    {
+      int r = file.read(); // byte
+      int g = file.read();
+      int b = file.read();
+
+      RgbColor color(r, g, b);
+      // color.Darken(100);
+      // const uint8_t limit = 100;
+      color = colorGamma.Correct(color);
+      strip.SetPixelColor(i, color);
+    }
+    strip.Show();
+    delay(5);
+  }
+  file.close();
+  delay(10);
 }
