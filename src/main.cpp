@@ -8,8 +8,11 @@
 //----------------------------------------------------------------------
 
 #include <SPIFFS.h>
+// #include "SD_MMC.h"
+#include <SD.h> // SD card library
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBus.h>
+
 
 #include "panel_config.h"
 
@@ -68,14 +71,65 @@ void SetupAnimationSet(uint16_t duration, const uint8_t peak = 128)
   }
 }
 
+void readFile(fs::FS &fs, const char *path)
+{
+  Serial.printf("Reading file: %s\n", path);
+
+  File file = fs.open(path);
+  if (!file)
+  {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+
+  Serial.print("Read from file: ");
+  while (file.available())
+  {
+    Serial.write(file.read());
+  }
+  file.close();
+}
+
 void setup()
 {
-  Serial.begin(115200);
-  while (!Serial)
-    ; // wait for serial attach
 
-  Serial.println();
-  Serial.println("Initializing...");
+  Serial.begin(115200);
+
+  if (!SD.begin())
+  {
+    Serial.println("Card Mount Failed");
+    return;
+  }
+  uint8_t cardType = SD.cardType();
+
+  if (cardType == CARD_NONE)
+  {
+    Serial.println("No SD card attached");
+    return;
+  }
+
+  Serial.print("SD Card Type: ");
+  if (cardType == CARD_MMC)
+  {
+    Serial.println("MMC");
+  }
+  else if (cardType == CARD_SD)
+  {
+    Serial.println("SDSC");
+  }
+  else if (cardType == CARD_SDHC)
+  {
+    Serial.println("SDHC");
+  }
+  else
+  {
+    Serial.println("UNKNOWN");
+  }
+
+  uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+  Serial.printf("SD Card Size: %lluMB\n", cardSize);
+  Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
+  Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
 
   strip.Begin();
   strip.Show();
@@ -89,10 +143,11 @@ void setup()
   Serial.println("Upper Right 0,1 is Red    -^ ");
   Serial.println("Lower Right 1,1 is Green  -v ");
   Serial.println("Lower Left  1,0 is Blue  v- ");
-}
+    }
 
 void loop()
 {
+
   const uint16_t x0 = 0;
   const uint16_t x1 = PanelWidth - 1;
   const uint16_t y0 = 0;
@@ -175,72 +230,42 @@ void loop()
   strip.Show();
   delay(10);
 
-  // .. animations
-  Serial.println("animations");
-
-  SetupAnimationSet(20);
-  while (animations.IsAnimating())
-  {
-    animations.UpdateAnimations();
-    strip.Show();
-  }
-  delay(100);
-
-  String filename = "/tstst.bin";
+  String filename = "/tstst1024.bin";
 
   // play()
   Serial.println("play file");
 
-  strip.ClearTo(black);
-  if (!SPIFFS.begin(true))
+  if (!SD.begin())
   {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+    Serial.println("Failed to mount card");
     return;
   }
 
-  auto file = SPIFFS.open(filename);
+  auto file = SD.open(filename);
+
   if (!file)
   {
-    Serial.println("Failed to open file!");
+    Serial.println("Opening file to write failed");
     return;
   }
-
-  Serial.println("file:");
-  Serial.println("name:" + filename);
-  Serial.println("size:");
-  Serial.println(file.size());
-  delay(500);
 
   const int bufSize = PixelCount * 3;
   const int headerSize = bufSize + 4;
   uint8_t buffer[headerSize];
 
   int f = 0;          // frame counter
-  int flimit = 10000; // frames
   int t0 = millis();
-  while (f < flimit && file.available() && file.read(buffer, headerSize) == headerSize)
+  while (file.available() && file.read(buffer, headerSize) == headerSize)
   {
     f++;
-#ifdef NOMOMO
-    Serial.write(f);
-    Serial.write("T: ");
-    Serial.write(String(buffer[3], 16).c_str());
-    Serial.write(" ");
-    Serial.write(String(buffer[2], 16).c_str());
-    Serial.write(" ");
-    Serial.write(String(buffer[1], 16).c_str());
-    Serial.write(" ");
-    Serial.write(String(buffer[0], 16).c_str());
-    Serial.write(" ");
 
-    Serial.write("r");
-    Serial.write(String(buffer[4], 16).c_str());
-    Serial.write(" g");
-    Serial.write(String(buffer[5], 16).c_str());
-    Serial.write(" b");
-    Serial.write(String(buffer[6], 16).c_str());
-    Serial.println("");
-#endif
+    if (f % 1000 == 0) {
+      int t1 = millis();
+      Serial.print(t1 - t0);
+
+      Serial.print (" frames:");
+      Serial.println(f);
+    }
     for (int i = 0; i < PixelCount; i++)
     {
       int r = buffer[4 + 3 * i + 0];
@@ -248,13 +273,11 @@ void loop()
       int b = buffer[4 + 3 * i + 2];
 
       RgbColor color(r, g, b);
-      // color.Darken(100);
-      // const uint8_t limit = 100;
       color = colorGamma.Correct(color);
       strip.SetPixelColor(i, color);
     }
     strip.Show();
-    delay(10);
+    // delay(1);
   }
   file.close();
 
