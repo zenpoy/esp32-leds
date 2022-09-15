@@ -305,21 +305,21 @@ void DeleteAnListPtr()
   // }
 }
 
+// const AnimationsList *global_anList;
+int32_t global_songStartTime;
+
 void SendMonitorMsg(char *buffer, size_t bufferSize)
 {
-
   StaticJsonDocument<128> json_doc;
   json_doc["ThingName"] = THING_NAME;
   json_doc["Alive"] = true;
   json_doc["WifiSignal"] = WiFi.RSSI();
   json_doc["millis"] = millis();
+  // json_doc["global song start time"] = global_songStartTime;
+  json_doc["global time"] = ((int32_t)(millis())) - global_songStartTime;
   serializeJson(json_doc, buffer, bufferSize);
   // report to monitor what song is running, animations, etc.
 }
-
-// NewSongMsg global_msg;
-// const AnimationsList *global_anList;
-int32_t global_songStartTime;
 
 void MonitorLoop(void *parameter)
 {
@@ -346,13 +346,14 @@ void MonitorLoop(void *parameter)
     {
       lastReportTime = currTime;
 
-      Serial.print("[0] status millis: ");
+      PrintCorePrefix();
+      Serial.print("status: millis: ");
       Serial.print(millis());
       Serial.print(" wifi:");
       Serial.print(WiFi.status() == WL_CONNECTED);
       Serial.print(" mqtt:");
       Serial.print(client.connected());
-      Serial.print(" hasValidSong:");
+      // Serial.print(" hasValidSong:");
       // Serial.print(global_anList != nullptr);
       Serial.print(" songOffset:");
       Serial.print(((int32_t)millis()) - global_songStartTime);
@@ -418,37 +419,39 @@ void setup()
       0);            /* Core where the task should run */
 }
 
-// we keep this object once so we don't need to create the string on every loop
-CurrentSongDetails songDetails;
-
 unsigned int lastPrint1Time = millis();
+unsigned int lastSecond = 0;
 
 void loop()
 {
-
   unsigned long currentMillis = millis();
   Core0WdReceive(currentMillis);
 
   if (currentMillis - lastPrint1Time >= 5000)
   {
-    // Serial.println("[1] core 1 alive");
+    PrintCorePrefix();
+    Serial.println("core 1 alive");
     lastPrint1Time = currentMillis;
   }
 
   NewSongMsg newMsg;
   if (xQueueReceive(anListQueue, &newMsg, 0) == pdTRUE)
   {
-    Serial.println("[1] received message on NewSongMsg queue");
-    Serial.print("[1] songStartTime: ");
+    PrintCorePrefix();
+    Serial.println("received message on NewSongMsg queue");
+
+    PrintCorePrefix();
+    Serial.print("songStartTime: ");
     Serial.println(newMsg.songStartTime);
-    // Serial.print("[1] an list valid: ");
-    // Serial.println(newMsg.anList != nullptr);
-    Serial.print("[1] onlyUpdateTime: ");
+
+    PrintCorePrefix();
+    Serial.print("onlyUpdateTime: ");
     Serial.println(newMsg.onlyUpdateTime);
 
     if (newMsg.onlyUpdateTime)
     {
-      Serial.print("[1] only update time: ");
+      PrintCorePrefix();
+      Serial.print("only update time: ");
       global_songStartTime = newMsg.songStartTime;
     }
     else
@@ -466,27 +469,23 @@ void loop()
   renderUtils.Clear();
 
   // bool hasValidSong = global_anList != nullptr;
-  // if (hasValidSong)
+  int32_t songOffset = ((int32_t)(currentMillis)) - global_songStartTime;
+  if (songOffset > 1000 * lastSecond)
   {
-    int32_t songOffset = ((int32_t)(currentMillis)) - global_songStartTime;
-    Serial.println("songOffset");
-    Serial.println(songOffset);
-    // const AnimationsList *currList = global_anList;
+    lastSecond++;
 
-    // Serial.print("number of animations: ");
-    // Serial.println(currList->size());
-    // Serial.print("song offset: ");
-    // Serial.println(songOffset);
-    // for (AnimationsList::const_iterator it = currList->begin(); it != currList->end(); it++)
-    // {
-    //   IAnimation *animation = *it;
-    //   if (animation != nullptr && animation->IsActive(songOffset))
-    //   {
-    //!     animation->Render((unsigned long)songOffset);
-    //   }
-    // }
+    PrintCorePrefix();
+    Serial.print("offset: ");
+    Serial.println(songOffset);
+    // render all animations:
+    //!     animations...  Render((unsigned long)songOffset);
   }
-  // unsigned long renderLoopTime = millis() - currentMillis;
+  const int ONBOARD_LED = 2;
+  digitalWrite(ONBOARD_LED, HIGH);
+  delay(100);
+  digitalWrite(ONBOARD_LED, LOW);
+
+  unsigned long renderLoopTime = millis() - currentMillis;
   // Serial.print("loop time ms: ");
   // Serial.println(renderLoopTime);
 
