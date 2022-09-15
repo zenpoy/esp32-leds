@@ -210,24 +210,37 @@ void loop()
   Serial.println("size:");
   Serial.println(file.size());
   delay(500);
-  Serial.println("contents:");
-  delay(50);
 
   const int bufSize = PixelCount * 3;
   const int headerSize = bufSize + 4;
-  uint8_t buffer[bufSize];
+  uint8_t buffer[headerSize];
 
-  int dur = 10000;                                                            // millisec
-  for (int f = 0; f < dur && file.read(buffer, headerSize) == headerSize; f++) // frames
+  int f = 0;          // frame counter
+  int flimit = 10000; // frames
+  int t0 = millis();
+  while (f < flimit && file.available() && file.read(buffer, headerSize) == headerSize)
   {
+    f++;
+#ifdef NOMOMO
     Serial.write(f);
+    Serial.write("T: ");
+    Serial.write(String(buffer[3], 16).c_str());
+    Serial.write(" ");
+    Serial.write(String(buffer[2], 16).c_str());
+    Serial.write(" ");
+    Serial.write(String(buffer[1], 16).c_str());
+    Serial.write(" ");
+    Serial.write(String(buffer[0], 16).c_str());
+    Serial.write(" ");
 
-    // unsigned int bytesRead = ;
-    Serial.write((String(buffer[0], 16) + ' ').c_str());
-    Serial.write((String(buffer[1], 16) + ' ').c_str());
-    Serial.write((String(buffer[2], 16) + ' ').c_str());
-    Serial.write((String(buffer[3], 16) + ' ').c_str());
+    Serial.write("r");
+    Serial.write(String(buffer[4], 16).c_str());
+    Serial.write(" g");
+    Serial.write(String(buffer[5], 16).c_str());
+    Serial.write(" b");
+    Serial.write(String(buffer[6], 16).c_str());
     Serial.println("");
+#endif
     for (int i = 0; i < PixelCount; i++)
     {
       int r = buffer[4 + 3 * i + 0];
@@ -241,7 +254,15 @@ void loop()
       strip.SetPixelColor(i, color);
     }
     strip.Show();
-    delay(20);
+    delay(10);
   }
   file.close();
+
+  int t1 = millis();
+  Serial.println("actual time");
+  Serial.println(t1 - t0);
+
+  Serial.println("frames:");
+  Serial.println(f);
+  delay(500);
 }
