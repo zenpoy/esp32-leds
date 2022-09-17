@@ -402,7 +402,7 @@ void readBufferFromFile(File &file, uint8_t *buf, uint32_t pos,size_t size)
 
   Serial.printf("Read from file: %i -> %i\n", pos, size);
   // disableCore1WDT();
-  esp_task_wdt_delete(0);
+  // esp_task_wdt_delete(0);
   uint32_t current_pos = file.position();
   file.seek(0, fs::SeekEnd);
   uint32_t end_of_file = file.position();
@@ -422,7 +422,7 @@ void readBufferFromFile(File &file, uint8_t *buf, uint32_t pos,size_t size)
     Serial.printf("Failed to read file: current %i, desired %i\n", current_pos, pos);
   }
   // enableCore1WDT();
-  esp_task_wdt_add(0);
+  // esp_task_wdt_add(0);
   // file.close();
 }
 
@@ -480,6 +480,9 @@ void setup()
 
   delay(500);
 
+  strip.Begin();
+  strip.Show();
+
   disableCore0WDT();
 
   //! global_anList = nullptr;
@@ -499,9 +502,6 @@ void setup()
   Serial.print("fsManager.setup() ");
   ok = fsManager.setup();
   Serial.println(ok ? " ok " : "FAIL");
-
-  PrintCorePrefix();
-  Serial.println("renderUtils.Setup() ");
 
   PrintCorePrefix();
   // Serial.println("ReadObjectsConfigFile ");
@@ -524,7 +524,7 @@ template <typename T_COLOR_FEATURE, typename T_METHOD>
 void renderFrame(uint8_t *buffer, NeoPixelBus<T_COLOR_FEATURE, T_METHOD> &strip)
 {
 
-#ifndef MONDEB
+#ifdef MONDEB
   int p = 0;
   for (int j = 0; j < PanelWidth; j++)
   {
@@ -567,8 +567,8 @@ void renderFrame(uint8_t *buffer, NeoPixelBus<T_COLOR_FEATURE, T_METHOD> &strip)
     color = colorGamma.Correct(color);
     strip.SetPixelColor(i, color);
   }
-  // strip.Show(); // <-- Had to comment this out because it panic'd
 }
+
 unsigned long int frame = 0;
 void loop()
 {
@@ -619,47 +619,48 @@ void loop()
   // int32_t frames[] = {0, 1500000};
   // int32_t currentFrame = frame;
   // Serial.println(currentFrame);
-  // aniFile.seek(currentFrame * headerSize);
-  frame = 0;
-  while (aniFile.available() && aniFile.read(frameBuffer, headerSize) == headerSize)
+  if (frame != currentFrame)
   {
-    frame++;
-    // if (frame % 1000 == 0)
-    // {
-    //   Serial.println(frame);
-    // }
-    renderFrame(frameBuffer, strip);
-    delay(fileSampleRateMs);
-    if (frame > 1)
-      break;
+    aniFile.seek(currentFrame * headerSize);
+    frame = currentFrame;
+    if (aniFile.available() && aniFile.read(frameBuffer, headerSize) == headerSize)
+    {
+      // if (frame % 1000 == 0)
+      // {
+      //   Serial.println(frame);
+      // }
+      renderFrame(frameBuffer, strip);
+      // delay(fileSampleRateMs);
+    }
   }
+  strip.Show();
 
-    // while (true)
-    // {
-    //   currentFrame = frame;
-    //   // if (currentFrame % 1000 == 0)
-    //   // {
-    //   Serial.print("Current frame: ");
-    //   Serial.println(currentFrame);
-    // // }
+  // while (true)
+  // {
+  //   currentFrame = frame;
+  //   // if (currentFrame % 1000 == 0)
+  //   // {
+  //   Serial.print("Current frame: ");
+  //   Serial.println(currentFrame);
+  // // }
 
-    //   readBufferFromFile(aniFile, frameBuffer, currentFrame * headerSize, headerSize);
+  //   readBufferFromFile(aniFile, frameBuffer, currentFrame * headerSize, headerSize);
 
-    //   frame++;
-    // }
+  //   frame++;
+  // }
 
-    int animationTime = frameBuffer[0];
+  int animationTime = frameBuffer[0];
 
-    // if (currentFrame % 1000 == 0)
-    // {
-    //   Serial.print("Animation time: ");
-    //   Serial.println(animationTime);
-    // }
+  // if (currentFrame % 1000 == 0)
+  // {
+  //   Serial.print("Animation time: ");
+  //   Serial.println(animationTime);
+  // }
 
-    // if (animationTime != lastAnimationTime) {
-    //   renderFrame(frameBuffer, strip);
-    //   lastAnimationTime = animationTime;
-    // }
+  // if (animationTime != lastAnimationTime) {
+  //   renderFrame(frameBuffer, strip);
+  //   lastAnimationTime = animationTime;
+  // }
 
-    vTaskDelay(5);
+  vTaskDelay(5);
   }
