@@ -26,4 +26,4 @@ const String filename = "/tstst1024.bin";
 const int32_t timeSize = 4;
 const int32_t bufSize = PixelCount * 3;
 const int32_t headerSize = bufSize + timeSize;
-const int32_t fileSampleRateMs = 100;
+const int32_t fileSampleRateMs = 10;

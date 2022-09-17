@@ -567,10 +567,9 @@ void renderFrame(uint8_t *buffer, NeoPixelBus<T_COLOR_FEATURE, T_METHOD> &strip)
     color = colorGamma.Correct(color);
     strip.SetPixelColor(i, color);
   }
-
   // strip.Show(); // <-- Had to comment this out because it panic'd
 }
-int32_t frame = 0;
+unsigned long int frame = 0;
 void loop()
 {
   unsigned long currentMillis = millis();
@@ -616,18 +615,23 @@ void loop()
   }
 
   int32_t songOffset = ((int32_t)(currentMillis)) - global_songStartTime;
-  // int32_t currentFrame = songOffset / fileSampleRateMs;
+  int32_t currentFrame = songOffset / fileSampleRateMs;
   // int32_t frames[] = {0, 1500000};
-  int32_t currentFrame = frame;
-
+  // int32_t currentFrame = frame;
+  // Serial.println(currentFrame);
+  // aniFile.seek(currentFrame * headerSize);
+  frame = 0;
   while (aniFile.available() && aniFile.read(frameBuffer, headerSize) == headerSize)
   {
     frame++;
-    if (frame % 100 == 0)
-    {
-      Serial.println(frame);
-    }
+    // if (frame % 1000 == 0)
+    // {
+    //   Serial.println(frame);
+    // }
     renderFrame(frameBuffer, strip);
+    delay(fileSampleRateMs);
+    if (frame > 1)
+      break;
   }
 
     // while (true)
