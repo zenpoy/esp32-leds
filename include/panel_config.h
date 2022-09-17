@@ -13,15 +13,15 @@
 typedef ColumnMajorAlternating180Layout MyPanelLayout;
 
 // make sure to set these panel values to the sizes of yours
-const uint8_t PanelWidth = 10; // 10
-const uint8_t PanelHeight = 20; //20
+const uint8_t PanelWidth = 5; // 10
+const uint8_t PanelHeight = 10; //20
 const uint8_t TileWidth = 1; // laid out in 4 panels x 2 panels mosaic
 const uint8_t TileHeight = 1;
 
 const uint16_t PixelCount = PanelWidth * PanelHeight * TileWidth * TileHeight;
 const uint8_t PixelPin = 2;
 
-const String filename = "/tstst1024.bin";
+const String filename = "/tststpy.bin";
 
 const int32_t timeSize = 4;
 const int32_t bufSize = PixelCount * 3;

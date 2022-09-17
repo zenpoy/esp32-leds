@@ -569,7 +569,7 @@ void renderFrame(uint8_t *buffer, NeoPixelBus<T_COLOR_FEATURE, T_METHOD> &strip)
   }
 }
 
-unsigned long int frame = 0;
+unsigned long int frame = -1;
 void loop()
 {
   unsigned long currentMillis = millis();
@@ -616,11 +616,12 @@ void loop()
 
   int32_t songOffset = ((int32_t)(currentMillis)) - global_songStartTime;
   int32_t currentFrame = songOffset / fileSampleRateMs;
+  // int32_t currentFrame = 0;
   // int32_t frames[] = {0, 1500000};
   // int32_t currentFrame = frame;
-  // Serial.println(currentFrame);
   if (frame != currentFrame)
   {
+    // Serial.println(currentFrame);
     aniFile.seek(currentFrame * headerSize);
     frame = currentFrame;
     if (aniFile.available() && aniFile.read(frameBuffer, headerSize) == headerSize)
