@@ -5,12 +5,16 @@
 #include <secrets.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <SD.h> // SD card library
 
-#include <render_utils.h>
 #include <song_offset_tracker.h>
 #include <fs_manager.h>
 
 #include "SPIFFS.h"
+#include <NeoPixelAnimator.h>
+#include <NeoPixelBus.h>
+#include "panel_config.h"
+#include <esp_task_wdt.h>
 
 #ifndef NUM_LEDS
 #warning NUM_LEDS not definded. using default value of 300
@@ -23,13 +27,19 @@
 
 const unsigned int WD_TIMEOUT_MS = 2000;
 
-HSV leds_hsv[NUM_LEDS];
-RenderUtils renderUtils(leds_hsv, NUM_LEDS);
+NeoPixelBus<NeoRgbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
+NeoGamma<NeoGammaTableMethod> colorGamma;
+
 SongOffsetTracker songOffsetTracker;
 // AnimationsContainer animationsContainer;
 FsManager fsManager;
 
 TaskHandle_t Task1;
+
+File aniFile;
+
+uint8_t frameBuffer[headerSize];
+int lastAnimationTime = -1;
 
 struct NewSongMsg
 {
@@ -378,9 +388,98 @@ void MonitorLoop(void *parameter)
   }
 }
 
+void readBufferFromFile(File &file, uint8_t *buf, uint32_t pos,size_t size)
+{
+  // Serial.print("Reading file: ");
+  // Serial.println(path);
+
+  // File file = fs.open(path);
+  // if (!file)
+  // {
+  //   Serial.println("Failed to open file for reading");
+  //   return;
+  // }
+
+  Serial.printf("Read from file: %i -> %i\n", pos, size);
+  // disableCore1WDT();
+  esp_task_wdt_delete(0);
+  uint32_t current_pos = file.position();
+  file.seek(0, fs::SeekEnd);
+  uint32_t end_of_file = file.position();
+  file.seek(current_pos, fs::SeekSet);
+  if (pos + size > end_of_file)
+  { 
+    Serial.println("Trying to read beyond file");
+    return;
+  }
+  if (file.seek(pos, fs::SeekSet))
+  {
+    file.read(buf, size);
+  }
+  else
+  {
+    current_pos = file.position();
+    Serial.printf("Failed to read file: current %i, desired %i\n", current_pos, pos);
+  }
+  // enableCore1WDT();
+  esp_task_wdt_add(0);
+  // file.close();
+}
+
+void beginSDCard(){
+  if (!SD.begin())
+  {
+    Serial.println("Card Mount Failed");
+    return;
+  }
+  uint8_t cardType = SD.cardType();
+
+  if (cardType == CARD_NONE)
+  {
+    Serial.println("No SD card attached");
+    return;
+  }
+
+  Serial.print("SD Card Type: ");
+  if (cardType == CARD_MMC)
+  {
+    Serial.println("MMC");
+  }
+  else if (cardType == CARD_SD)
+  {
+    Serial.println("SDSC");
+  }
+  else if (cardType == CARD_SDHC)
+  {
+    Serial.println("SDHC");
+  }
+  else
+  {
+    Serial.println("UNKNOWN");
+  }
+
+  uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+  Serial.printf("SD Card Size: %lluMB\n", cardSize);
+  Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
+  Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
+}
+
 void setup()
 {
   Serial.begin(115200);
+  
+  beginSDCard();
+
+  aniFile = SD.open(filename);
+
+  if (!aniFile)
+  {
+    Serial.println("Opening file failed");
+    return;
+  }
+
+  delay(500);
+
   disableCore0WDT();
 
   //! global_anList = nullptr;
@@ -403,14 +502,13 @@ void setup()
 
   PrintCorePrefix();
   Serial.println("renderUtils.Setup() ");
-  renderUtils.Setup();
 
   PrintCorePrefix();
-  Serial.println("ReadObjectsConfigFile ");
-  ReadObjectsConfigFile("/objects-config");
+  // Serial.println("ReadObjectsConfigFile ");
+  // ReadObjectsConfigFile("/objects-config");
 
   xTaskCreatePinnedToCore(
-      MonitorLoop,   /* Function to implement the task */
+      MonitorLoop,   /* Functirenon to implement the task */
       "MonitorTask", /* Name of the task */
       16384,         /* Stack size in words */
       NULL,          /* Task input parameter */
@@ -422,6 +520,57 @@ void setup()
 unsigned int lastPrint1Time = millis();
 unsigned int lastSecond = 0;
 
+template <typename T_COLOR_FEATURE, typename T_METHOD>
+void renderFrame(uint8_t *buffer, NeoPixelBus<T_COLOR_FEATURE, T_METHOD> &strip)
+{
+
+#ifndef MONDEB
+  int p = 0;
+  for (int j = 0; j < PanelWidth; j++)
+  {
+    for (int i = 0; i < PanelHeight; i++)
+    {
+      if (j % 2 == 1)
+        p = j * PanelHeight + (PanelHeight - i);
+      else 
+        p = j * PanelHeight + i;
+
+      int r = buffer[timeSize + 3 * p + 0];
+      int g = buffer[timeSize + 3 * p + 1];
+      int b = buffer[timeSize + 3 * p + 2];
+
+      RgbColor color(r, g, b);
+      color = colorGamma.Correct(color);
+
+      r = color.G;
+
+      if (r < 64)
+        Serial.print(" ");
+      else if (r < 128)
+        Serial.print("░");
+      else if (r < 192)
+        Serial.print("▒");
+      else if (r < 256)
+        Serial.print("▓");
+    }
+    Serial.println("");
+  }
+#endif
+
+  for (int i = 0; i < strip.PixelCount(); i++)
+  {
+    int r = buffer[timeSize + 3 * i + 0];
+    int g = buffer[timeSize + 3 * i + 1];
+    int b = buffer[timeSize + 3 * i + 2];
+
+    RgbColor color(r, g, b);
+    color = colorGamma.Correct(color);
+    strip.SetPixelColor(i, color);
+  }
+
+  // strip.Show(); // <-- Had to comment this out because it panic'd
+}
+int32_t frame = 0;
 void loop()
 {
   unsigned long currentMillis = millis();
@@ -466,39 +615,47 @@ void loop()
     }
   }
 
-  renderUtils.Clear();
-
-  // bool hasValidSong = global_anList != nullptr;
   int32_t songOffset = ((int32_t)(currentMillis)) - global_songStartTime;
-  if (songOffset > 1000 * lastSecond)
-  {
-    lastSecond++;
+  // int32_t currentFrame = songOffset / fileSampleRateMs;
+  // int32_t frames[] = {0, 1500000};
+  int32_t currentFrame = frame;
 
-    PrintCorePrefix();
-    Serial.print("offset: ");
-    Serial.println(songOffset);
-    // render all animations:
-    //!     animations...  Render((unsigned long)songOffset);
-  }
-  const int ONBOARD_LED = 2;
-  digitalWrite(ONBOARD_LED, HIGH);
-  delay(100);
-  digitalWrite(ONBOARD_LED, LOW);
-
-  unsigned long renderLoopTime = millis() - currentMillis;
-  // Serial.print("loop time ms: ");
-  // Serial.println(renderLoopTime);
-
-  // if 'EN' pressed:
-  const int BOOT_PIN = 0;
-  if (digitalRead(BOOT_PIN) == LOW)
+  while (aniFile.available() && aniFile.read(frameBuffer, headerSize) == headerSize)
   {
-    renderUtils.ShowTestPattern();
-  }
-  else
-  {
-    renderUtils.Show();
+    frame++;
+    if (frame % 100 == 0)
+    {
+      Serial.println(frame);
+    }
+    renderFrame(frameBuffer, strip);
   }
 
-  vTaskDelay(5);
-}
+    // while (true)
+    // {
+    //   currentFrame = frame;
+    //   // if (currentFrame % 1000 == 0)
+    //   // {
+    //   Serial.print("Current frame: ");
+    //   Serial.println(currentFrame);
+    // // }
+
+    //   readBufferFromFile(aniFile, frameBuffer, currentFrame * headerSize, headerSize);
+
+    //   frame++;
+    // }
+
+    int animationTime = frameBuffer[0];
+
+    // if (currentFrame % 1000 == 0)
+    // {
+    //   Serial.print("Animation time: ");
+    //   Serial.println(animationTime);
+    // }
+
+    // if (animationTime != lastAnimationTime) {
+    //   renderFrame(frameBuffer, strip);
+    //   lastAnimationTime = animationTime;
+    // }
+
+    vTaskDelay(5);
+  }
